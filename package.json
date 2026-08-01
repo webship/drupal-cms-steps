@@ -1,0 +1,55 @@
+{
+  "name": "@webship/drupal-cms-steps",
+  "version": "2.0.0",
+  "description": "webship-js test project for testing a Drupal CMS site (login, admin toolbar, dashboard, content management, and more).",
+  "main": "tests/step-definitions/drupal-cms.steps.js",
+  "files": [
+    "tests/step-definitions/drupal-cms.steps.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "BROWSER=chromium cucumber-js --config cucumber.js",
+    "test:chromium": "BROWSER=chromium cucumber-js --config cucumber.js",
+    "test:firefox": "BROWSER=firefox cucumber-js --config cucumber.js",
+    "test:webkit": "BROWSER=webkit cucumber-js --config cucumber.js",
+    "report": "generate-reports"
+  },
+  "keywords": [
+    "webship-js",
+    "drupal",
+    "drupal-cms",
+    "cucumber",
+    "playwright",
+    "bdd",
+    "testing",
+    "step-definitions"
+  ],
+  "author": "Webship.co",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/webship/drupal-cms-steps.git"
+  },
+  "bugs": {
+    "url": "https://github.com/webship/drupal-cms-steps/issues"
+  },
+  "homepage": "https://github.com/webship/drupal-cms-steps#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">= 20.0"
+  },
+  "devDependencies": {
+    "webship-js": "^2.0.4",
+    "ts-node": "^10",
+    "typescript": "~5.4.0"
+  },
+  "peerDependencies": {
+    "webship-js": "^2.0.4"
+  },
+  "overrides": {
+    "@cucumber/cucumber": "^12"
+  }
+}
