@@ -1,0 +1,96 @@
+name: Test
+
+on:
+  push:
+    branches: [2.0.x]
+  pull_request:
+    branches: [2.0.x]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Cucumber (webship-js) against a DDEV-hosted Drupal CMS site
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout drupal-cms-steps
+        uses: actions/checkout@v4
+
+      - name: Set up DDEV
+        uses: ddev/github-action-setup-ddev@v1
+        with:
+          autostart: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install drupal-cms-steps dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Create the Drupal CMS project directory
+        run: mkdir drupal-cms-site
+
+      - name: Build a default Drupal CMS site with DDEV
+        working-directory: drupal-cms-site
+        run: |
+          ddev config --project-type=drupal11 --docroot=web --project-name=drupal-cms-site
+          ddev start
+          # The drupal/cms:1.x project template predates Composer's
+          # allow-plugins enforcement for symfony/runtime; without this,
+          # create-project aborts with "blocked by your allow-plugins config".
+          ddev composer config --global --no-interaction allow-plugins.symfony/runtime true
+          # Pinned to the 1.x line: Drupal CMS 2.0 (2026-01-27) restructured
+          # content types (e.g. "page" is now "Utility page") and the homepage
+          # layout, which the scenarios in this suite don't yet target.
+          ddev composer create-project drupal/cms:^1.0 --no-interaction --no-progress
+          ddev composer require drush/drush --no-interaction --no-progress
+          # The drupal_cms_installer profile applies the drupal_cms_starter
+          # recipe, which is what the scenarios assert against.
+          ddev drush site:install drupal_cms_installer --account-name=admin --account-pass=admin --site-name="Drupal CMS Steps CI" --yes
+
+      - name: Create the content editor test user
+        working-directory: drupal-cms-site
+        run: |
+          ddev drush user:create content_editor --mail="content_editor@example.com" --password="content_editor"
+          ddev drush user:role:add content_editor content_editor
+          ddev drush cache:rebuild
+
+      - name: Get the DDEV site URL
+        id: ddev-site
+        working-directory: drupal-cms-site
+        run: echo "url=$(ddev describe -j | jq -r '.raw.primary_url')" >> "$GITHUB_OUTPUT"
+
+      - name: Run the drupal-cms-steps test suite
+        env:
+          LAUNCH_URL: ${{ steps.ddev-site.outputs.url }}
+          DRUPAL_ADMIN_USER: admin
+          DRUPAL_ADMIN_PASS: admin
+          DRUPAL_EDITOR_USER: content_editor
+          DRUPAL_EDITOR_PASS: content_editor
+          # DDEV serves the site under a self-signed (mkcert) HTTPS cert;
+          # webship-js's "response status code" step hits it directly with
+          # axios, which doesn't trust that CA.
+          NODE_TLS_REJECT_UNAUTHORIZED: '0'
+        run: npm test
+
+      - name: Upload cucumber HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cucumber-report
+          path: tests/reports/
+          if-no-files-found: ignore
+
+      - name: Upload failure screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-screenshots
+          path: screenshots/
+          if-no-files-found: ignore
