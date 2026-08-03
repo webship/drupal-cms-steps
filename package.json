@@ -1,5 +1,5 @@
 {
-  "name": "@webship/drupal-cms-steps",
+  "name": "@webship-js/drupal-cms-steps",
   "version": "2.0.0",
   "description": "webship-js test project for testing a Drupal CMS site (login, admin toolbar, dashboard, content management, and more).",
   "main": "tests/step-definitions/drupal-cms.steps.js",
