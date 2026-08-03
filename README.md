@@ -5,8 +5,8 @@ testing an external [Drupal CMS](https://www.drupal.org/about/drupal-cms)
 site: login/logout, the core Navigation admin toolbar, the admin dashboard,
 content management, and user management.
 
-This is a standalone test project, not a published npm package. It uses
-webship-js's standard layout:
+It is published to npm as `@webship-js/drupal-cms-steps` and doubles as a
+standalone test project. It uses webship-js's standard layout:
 
 - `tests/step-definitions/drupal-cms.steps.js` — custom `Given`/`When`/`Then`
   steps for Drupal CMS's admin UI
@@ -14,7 +14,33 @@ webship-js's standard layout:
 - `cucumber.js` — wires webship-js's core steps and this project's steps
   together and points at the site under test
 
-## Install
+## Installation
+
+To reuse these steps in your own webship-js project:
+
+```bash
+npm install --save-dev webship-js @webship-js/drupal-cms-steps
+```
+
+Add both step-definition paths to your project's `cucumber.js`:
+
+```javascript
+module.exports = {
+  default: {
+    require: [
+      'node_modules/webship-js/tests/step-definitions/**/*.js', // webship-js core steps
+      'node_modules/@webship-js/drupal-cms-steps/tests/step-definitions/drupal-cms.steps.js', // this plugin
+      'tests/step-definitions/**/*.js', // your own custom steps, if any
+    ],
+    paths: ['tests/features/**/*.feature'],
+    worldParameters: {
+      launchUrl: process.env.LAUNCH_URL || 'https://your-drupal-cms-site.example',
+    },
+  },
+};
+```
+
+## Working on this repo
 
 ```bash
 npm install
