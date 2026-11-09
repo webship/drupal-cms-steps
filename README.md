@@ -98,7 +98,7 @@ ddev composer create-project drupal/cms --no-interaction
 # version constraint): put this project's name back and drop the constraint.
 sed -i '/ddev_version_constraint/d' .ddev/config.yaml
 ddev config --project-name=drupal-cms-steps-site --project-type=drupal --docroot=web
-ddev restart
+ddev start -y --reset-database --omit-snapshot   # the scaffold pins a database version; nothing is installed yet
 ddev drush site:install drupal_cms_installer --site-name="Drupal CMS Steps" --account-name=admin --account-pass=admin --yes
 
 # Drupal CMS creates the "Content editor" role but no user for it.

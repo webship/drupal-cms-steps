@@ -51,7 +51,10 @@ jobs:
           # constraint so an older DDEV release still runs it.
           sed -i '/ddev_version_constraint/d' .ddev/config.yaml
           ddev config --project-name=drupal-cms-steps-site --project-type=drupal --docroot=web
-          ddev restart
+          # The scaffold also pins a database version that can differ from the one the first
+          # start created the volume with; nothing is installed yet, so start over with the
+          # configured one.
+          ddev start -y --reset-database --omit-snapshot
           # Non-interactive, the Drupal CMS installer applies the "Starter"
           # site template, which enables the canvas module (Drupal Canvas).
           ddev drush site:install drupal_cms_installer \
