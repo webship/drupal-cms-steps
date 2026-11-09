@@ -1,6 +1,6 @@
 {
   "name": "@webship-js/drupal-cms-steps",
-  "version": "2.0.0-alpha1",
+  "version": "2.0.0-beta1",
   "description": "Drupal CMS specific Cucumber step definitions plugin for webship-js: the Navigation toolbar and dashboard, Drupal CMS content types and recipes, user management specifics and Drupal Canvas (editor and API), on top of @webship-js/drupal-core-steps.",
   "main": "tests/step-definitions/drupal-cms.steps.js",
   "files": [
