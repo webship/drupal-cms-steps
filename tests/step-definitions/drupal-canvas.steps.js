@@ -228,7 +228,10 @@ async function appendComponent(page, pageId, componentId, definition, inputs) {
   const data = layoutResult.data;
   const content = data.layout.find((region) => region.nodeType === 'region' && region.id === 'content');
   if (!content) {
-    throw friendly('The Canvas page has no main content region to add the component to.');
+    throw friendly({
+      message: 'The Canvas page has no main content region to add the component to.',
+      hint: 'The layout API returned no "content" region; the page template may name its regions differently.',
+    });
   }
   const uuid = randomUUID();
   content.components.push({ uuid, nodeType: 'component', type: `${componentId}@${definition.version}`, name: null, slots: [] });
@@ -258,16 +261,23 @@ async function appendComponent(page, pageId, componentId, definition, inputs) {
  * @returns {Promise<number>} How many items were pending.
  */
 async function publishPending(page) {
+  // The auto-save lands a moment after the layout request returns; poll the
+  // pending list in the page (same session) until it is non-empty, with a
+  // budget well under the step timeout.
   let pending = null;
-  for (let attempt = 0; attempt < 15; attempt++) {
-    const result = await canvasRequest(page, '/canvas/api/v0/auto-saves/pending');
-    pending = result.ok && result.data && result.data.data;
-    if (pending && Object.keys(pending).length > 0) break;
-    await page.waitForTimeout(1000);
-  }
-  if (!pending || Object.keys(pending).length === 0) {
+  try {
+    const handle = await page.waitForFunction(async (path) => {
+      const response = await fetch(path, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+      if (!response.ok) return null;
+      const payload = await response.json().catch(() => null);
+      const data = payload && payload.data;
+      return data && Object.keys(data).length > 0 ? data : null;
+    }, '/canvas/api/v0/auto-saves/pending', { timeout: 15000, polling: 500 });
+    pending = await handle.jsonValue();
+  } catch (error) {
     throw friendly({
       message: 'There are no pending Canvas changes to publish.',
+      cause: error,
       hint: 'Change a page first (add or insert a component, set an option).',
     });
   }
@@ -727,25 +737,29 @@ When(/^(I |we )*open the "(Patterns|Components)" tab in the Canvas Library$/, { 
  */
 Then(/^the Canvas Library "(Patterns|Components)" tab should( not)* list "([^"]*)"$/, { timeout: 30000 }, async function (tabName, notCase, label) {
   const panel = this.page.getByTestId(`canvas-library-${tabName.toLowerCase()}-tab-content`).first();
-  let text = '';
   try {
     await panel.waitFor({ state: 'visible', timeout: 15000 });
-    text = (await panel.innerText()) || '';
   } catch (error) {
     throw friendly({ message: `Could not read the Canvas Library "${tabName}" tab.`, cause: error, hint: 'Open that Library tab first.' });
   }
-  const items = text.split('\n').map((s) => s.trim()).filter(Boolean);
-  const byAttribute = (await panel.locator(`[data-canvas-name="${label.replace(/"/g, '\\"')}"]`).count()) > 0;
-  const present = byAttribute || items.includes(label);
-  assert.ok(
-    notCase ? !present : present,
-    friendly({
+  // An item is listed by its data attribute or by a row whose text is exactly
+  // the label; Playwright polls for it to appear (or to be gone).
+  const item = panel.locator(`[data-canvas-name="${label.replace(/"/g, '\\"')}"]`)
+    .or(panel.getByText(label, { exact: true }))
+    .first();
+  try {
+    await item.waitFor({ state: notCase ? 'detached' : 'attached', timeout: 10000 });
+  } catch (error) {
+    const text = (await panel.innerText({ timeout: 1000 }).catch(() => '')) || '';
+    const items = text.split('\n').map((s) => s.trim()).filter(Boolean);
+    throw friendly({
       message: notCase
         ? `The Canvas Library "${tabName}" tab should not list "${label}", but it does.`
         : `The Canvas Library "${tabName}" tab should list "${label}", but it does not.`,
-      cause: notCase ? undefined : `items seen: ${items.join(', ')}`,
-    }).message
-  );
+      cause: `items seen: ${items.join(', ')}`,
+      hint: 'Use the item\'s visible label exactly as the Library shows it (case and spacing included).',
+    });
+  }
 });
 
 /**
@@ -767,8 +781,9 @@ When(/^(I |we )*insert the "([^"]*)" (component|pattern) from the Canvas Library
   const uuidOf = (url) => (url.match(/\/component\/([0-9a-f-]+)/i) || [])[1] || null;
   const before = uuidOf(this.page.url());
   const panel = this.page.getByTestId(`canvas-library-${kind === 'component' ? 'components' : 'patterns'}-tab-content`);
-  const byAttribute = panel.locator(`[data-canvas-name="${label.replace(/"/g, '\\"')}"]`).first();
-  const row = (await byAttribute.count()) ? byAttribute : panel.getByText(label, { exact: true }).first();
+  const row = panel.locator(`[data-canvas-name="${label.replace(/"/g, '\\"')}"]`)
+    .or(panel.getByText(label, { exact: true }))
+    .first();
   try {
     await row.waitFor({ state: 'visible', timeout: 15000 });
     await row.scrollIntoViewIfNeeded();
