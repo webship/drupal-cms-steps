@@ -40,14 +40,14 @@ Feature: Content management
     And I am adding a "page"
     Then I should see the navigation sidebar
     And I should see the page title "Create Utility page"
-    And "#edit-field-featured-image-open-button" should be visible
+    And the "Add media" button should be visible
 
   # Drupal CMS marks the Utility page "Description" field required (it feeds
   # the search engine description), so a title alone must not be accepted.
   Scenario: A utility page cannot be saved without a description
     Given I am a logged in user with the "content editor" user
     And I am adding a "page"
-    When I fill in the field "#edit-title-0-value" with "Page with no description"
+    When I fill in "Title" with "Page with no description"
     And I save the content
     Then the "Description" field should block submission as required
     And I should see the page title "Create Utility page"
@@ -58,8 +58,10 @@ Feature: Content management
   Scenario: The content editor creates a utility page, publishes it through the workflow and removes it
     Given I am a logged in user with the "content editor" user
     And I am adding a "page"
-    When I fill in the field "#edit-title-0-value" with "Webship acceptance page"
-    And I fill in the field "#edit-field-description-0-value" with "Created by the webship-js acceptance suite."
+    When I fill in "Title" with "Webship acceptance page"
+    # The add form carries two fields labelled "Description" (the page's own
+    # and the menu link's), so this one is named by its field name.
+    And I fill in "field_description[0][value]" with "Created by the webship-js acceptance suite."
     And I fill in the rich text editor field "Content" with "<p>Body written through the rich text editor.</p>"
     And I save the content
     Then I should see a status message "Webship acceptance page has been created."

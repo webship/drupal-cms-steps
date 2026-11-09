@@ -124,6 +124,7 @@ Other scripts:
 | --- | --- |
 | `npm test` | Full suite, pretty output |
 | `npm run test:dry` | `--dry-run`: checks for undefined and ambiguous steps across the three step sources, no browser |
+| `npm run test:examples` | No browser: every step's JSDoc carries five `Example #n:` lines that match its own definition and no other (webship-js and the core pack included), and every feature step resolves to exactly one definition (also runs in CI) |
 | `npm run test:headed` | Headed browser |
 | `npm run test:chromium` / `test:firefox` / `test:webkit` | Pick a browser |
 

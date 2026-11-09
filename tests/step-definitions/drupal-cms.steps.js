@@ -230,7 +230,10 @@ When(/^(I |we )*choose the "([^"]*)" action in the top bar$/, async function (pr
     return { href: el.tagName === 'A' ? el.getAttribute('href') : null, visible: el.offsetParent !== null };
   }, actionText);
   if (!target) {
-    throw friendly(`No "${actionText}" action was found in the top bar.`);
+    throw friendly({
+      message: `No "${actionText}" action was found in the top bar.`,
+      hint: 'Use the visible label of a top bar action ("Edit", "Delete", "View"); the top bar only renders on a content item for a user who may act on it.',
+    });
   }
   if (target.href) {
     await navigate(this, target.href);
@@ -281,13 +284,10 @@ Then(/^(I |we )*should( not)* see the (?:admin )?dashboard$/, async function (pr
     await assertPresence(dashboard, notCase, 'the dashboard (".dashboard")');
     return;
   }
-  if (await dashboard.count()) {
-    await assertPresence(dashboard, undefined, 'the dashboard (".dashboard")');
-    return;
-  }
-  const heading = this.page.locator('h1.page-title, h1').first();
-  await assertPresence(heading, undefined, 'the dashboard page title');
-  await assertContainsText(heading, 'Dashboard', 'the page title');
+  // Either marker satisfies the positive case; Playwright waits for the
+  // first of the two to render.
+  const heading = this.page.locator('h1.page-title, h1').filter({ hasText: /Dashboard/ }).first();
+  await assertPresence(dashboard.or(heading).first(), undefined, 'the dashboard (".dashboard", or a "Dashboard" page title)');
 });
 
 /**
@@ -370,7 +370,10 @@ Then(/^the "([^"]*)" content type should( not)* exist$/, async function (label, 
 When(/^(I |we )*save the (?:content|content item|node)$/, async function (pronounCase) {
   const found = await submitInPage(this, SELECTORS.saveButton, 'form.node-form');
   if (!found) {
-    throw friendly('No Save button was found on the node form.');
+    throw friendly({
+      message: 'No Save button was found on the node form.',
+      hint: 'Open a content add or edit form first; the step submits the sticky "Save" clone or the form\'s own "#edit-submit".',
+    });
   }
 });
 
@@ -496,7 +499,10 @@ When(/^(I |we )*change the (?:content )?moderation state to "([^"]*)"$/, async f
   await select.selectOption(option.value);
   const found = await submitInPage(this, 'form.content-moderation-entity-moderation-form #edit-submit, .entity-moderation-form #edit-submit, .entity-moderation-form input[type="submit"]', 'form.content-moderation-entity-moderation-form');
   if (!found) {
-    throw friendly('The moderation control has no Apply button to submit.');
+    throw friendly({
+      message: 'The moderation control has no Apply button to submit.',
+      hint: 'The control form renders under a moderated content item for a user who may change its state; check the role\'s workflow permissions.',
+    });
   }
 });
 
@@ -511,15 +517,18 @@ When(/^(I |we )*change the (?:content )?moderation state to "([^"]*)"$/, async f
  * Example #1: When I open the moderation sidebar
  * Example #2: And I open the moderation sidebar
  * Example #3: When we open the moderation sidebar
- * Example #4: When I click on tasks in the toolbar
- * Example #5: And click on tasks in the toolbar
+ * Example #4: And we open the moderation sidebar
+ * Example #5: When open the moderation sidebar
  *
  */
-When(/^(I |we )*(?:open the moderation sidebar|click on tasks in the toolbar)$/, async function (pronounCase) {
+When(/^(I |we )*open the moderation sidebar$/, async function (pronounCase) {
   const tab = this.page.locator(SELECTORS.moderationSidebarTab).first();
-  if (!(await tab.count())) {
+  try {
+    await tab.waitFor({ state: 'attached', timeout: budget(this) });
+  } catch (error) {
     throw friendly({
       message: 'The moderation sidebar toolbar tab was not found.',
+      cause: error,
       hint: 'This needs the Moderation Sidebar module and a moderated content item on screen.',
     });
   }
@@ -542,17 +551,30 @@ When(/^(I |we )*(?:open the moderation sidebar|click on tasks in the toolbar)$/,
  */
 Then(/^(?:the )?moderation sidebar should( not)* show "([^"]*)"$/, async function (notCase, text) {
   const sidebar = this.page.locator(SELECTORS.moderationSidebar).first();
-  if (!(await sidebar.count())) {
-    throw friendly('The moderation sidebar is not open.', 'Open it first with "I open the moderation sidebar".');
+  try {
+    await sidebar.waitFor({ state: 'visible', timeout: budget(this) });
+  } catch (error) {
+    throw friendly({
+      message: 'The moderation sidebar is not open.',
+      cause: error,
+      hint: 'Open it first with "I open the moderation sidebar".',
+    });
   }
-  const body = ((await sidebar.innerText()) || '').toLowerCase();
-  const found = body.includes(text.toLowerCase());
-  assert.ok(
-    notCase ? !found : found,
-    friendly(notCase
-      ? `The moderation sidebar unexpectedly shows "${text}".`
-      : `The moderation sidebar does not show "${text}".`).message
-  );
+  // The assertion is the wait: narrow the panel to "contains the text" and
+  // let Playwright poll for that to hold (or to stop holding).
+  const pattern = new RegExp(text.trim().split(/\s+/).map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+'), 'i');
+  try {
+    await sidebar.filter({ hasText: pattern }).waitFor({ state: notCase ? 'detached' : 'attached', timeout: budget(this) });
+  } catch (error) {
+    const body = ((await sidebar.innerText({ timeout: 1000 }).catch(() => '')) || '').replace(/\s+/g, ' ').trim();
+    throw friendly({
+      message: notCase
+        ? `The moderation sidebar unexpectedly shows "${text}".`
+        : `The moderation sidebar does not show "${text}".`,
+      cause: `the panel reads "${body}"`,
+      hint: 'The text is matched case-insensitively inside the off-canvas panel; check the state name or action label the module renders.',
+    });
+  }
 });
 
 // Referenced for completeness by downstream packs; kept exported so a project
