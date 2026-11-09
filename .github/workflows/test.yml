@@ -1,0 +1,103 @@
+name: Test
+
+on:
+  push:
+    branches: ['2.0.x']
+  pull_request:
+    branches: ['2.0.x']
+  workflow_dispatch:
+
+env:
+  FORCE_COLOR: '1'
+  LAUNCH_URL: http://drupal-cms-steps-site.ddev.site
+  # Accounts the users registry in cucumber.js logs in as (see README).
+  DRUPAL_ADMIN_USER: admin
+  DRUPAL_ADMIN_PASS: admin
+  DRUPAL_EDITOR_USER: content_editor
+  DRUPAL_EDITOR_PASS: content_editor
+  DRUPAL_EDITOR_MAIL: content_editor@example.com
+
+jobs:
+  cucumber:
+    name: Cucumber (webship-js) against a DDEV-hosted Drupal CMS site
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Install and start DDEV
+        uses: ddev/github-action-setup-ddev@v1
+        with:
+          ddevDir: drupal
+
+      - name: Build a default Drupal CMS site (Starter site template, which installs Drupal Canvas)
+        working-directory: drupal
+        run: |
+          ddev composer create-project drupal/cms --no-interaction --no-progress
+          # The drupal/cms template scaffolds its own .ddev/config.yaml (no
+          # project name, a DDEV version constraint). Put this project's name
+          # back so the site keeps answering at $LAUNCH_URL, and drop the
+          # constraint so an older DDEV release still runs it.
+          sed -i '/ddev_version_constraint/d' .ddev/config.yaml
+          ddev config --project-name=drupal-cms-steps-site --project-type=drupal --docroot=web
+          ddev restart
+          # Non-interactive, the Drupal CMS installer applies the "Starter"
+          # site template, which enables the canvas module (Drupal Canvas).
+          ddev drush site:install drupal_cms_installer \
+            --site-name="Drupal CMS Steps" \
+            --account-name="$DRUPAL_ADMIN_USER" --account-pass="$DRUPAL_ADMIN_PASS" \
+            --yes
+
+      - name: Create the content editor test user
+        working-directory: drupal
+        run: |
+          ddev drush user:create "$DRUPAL_EDITOR_USER" --mail="$DRUPAL_EDITOR_MAIL" --password="$DRUPAL_EDITOR_PASS"
+          ddev drush user:role:add content_editor "$DRUPAL_EDITOR_USER"
+          ddev drush cache:rebuild
+
+      - name: Confirm Drupal Canvas is installed
+        working-directory: drupal
+        run: ddev drush pm:list --status=enabled --type=module --format=list | grep -x canvas
+
+      - name: Wait for the site to answer over its DDEV URL
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$LAUNCH_URL/user/login" || true)
+            [ "$code" = "200" ] && exit 0
+            sleep 2
+          done
+          echo "Site never settled to a clean 200 response" >&2
+          exit 1
+
+      - name: Run cucumber dry-run (no ambiguous/undefined steps across webship-js, the core pack and this pack)
+        run: npm run test:dry
+
+      - name: Run Drupal CMS step tests
+        run: npm test
+
+      - name: Show DDEV logs
+        if: always()
+        working-directory: drupal
+        run: ddev logs || true
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cucumber-report
+          path: |
+            tests/reports/
+            screenshots/
+          retention-days: 14
+          if-no-files-found: ignore
