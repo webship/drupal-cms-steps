@@ -16,6 +16,9 @@
 // CSRF token from /session/token), so a login step must come first.
 
 const { Given, When, Then } = require('@cucumber/cucumber');
+// Ids are made here, not in the page: the browser's crypto.randomUUID exists only in a secure context,
+// and the site under test may be served over plain http (as it is in CI).
+const { randomUUID } = require('crypto');
 const assert = require('assert');
 const { gotoUrl, smartSettle, friendly } = require('webship-js/tests/step-definitions/webship');
 const {
@@ -227,7 +230,7 @@ async function appendComponent(page, pageId, componentId, definition, inputs) {
   if (!content) {
     throw friendly('The Canvas page has no main content region to add the component to.');
   }
-  const uuid = await page.evaluate(() => crypto.randomUUID());
+  const uuid = randomUUID();
   content.components.push({ uuid, nodeType: 'component', type: `${componentId}@${definition.version}`, name: null, slots: [] });
   data.model[uuid] = buildModel(definition, inputs);
   const post = await canvasRequest(page, `/canvas/api/v0/layout/canvas_page/${pageId}`, {
@@ -236,7 +239,7 @@ async function appendComponent(page, pageId, componentId, definition, inputs) {
       layout: data.layout,
       model: data.model,
       autoSaves: data.autoSaves,
-      clientInstanceId: await page.evaluate(() => crypto.randomUUID()),
+      clientInstanceId: randomUUID(),
       entity_form_fields: data.entity_form_fields,
     },
   });
@@ -325,7 +328,7 @@ Given(/^(?:there is |I have |we have )?a new Canvas page "([^"]*)" at "([^"]*)"$
           layout: data.layout,
           model: data.model,
           autoSaves: data.autoSaves,
-          clientInstanceId: await this.page.evaluate(() => crypto.randomUUID()),
+          clientInstanceId: randomUUID(),
           entity_form_fields: data.entity_form_fields,
         },
       });
@@ -410,7 +413,7 @@ async function createCanvasPageWithComponent(world, title, path, component, tabl
           layout: data.layout,
           model: data.model,
           autoSaves: data.autoSaves,
-          clientInstanceId: await world.page.evaluate(() => crypto.randomUUID()),
+          clientInstanceId: randomUUID(),
           entity_form_fields: data.entity_form_fields,
         },
       });
@@ -510,7 +513,7 @@ When(/^(I |we )*publish the (?:pending )?Canvas (?:page )?changes$/, { timeout: 
           layout: data.layout,
           model: data.model,
           autoSaves: data.autoSaves,
-          clientInstanceId: await this.page.evaluate(() => crypto.randomUUID()),
+          clientInstanceId: randomUUID(),
           entity_form_fields: data.entity_form_fields,
         },
       });
