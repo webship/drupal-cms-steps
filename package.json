@@ -1,6 +1,6 @@
 {
   "name": "@webship-js/drupal-cms-steps",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Drupal CMS specific Cucumber step definitions plugin for webship-js: the dashboard, email login, the cookie consent dialog, site templates and add-on recipes, and Drupal Canvas (editor and API); it brings @webship-js/drupal-core-steps along, so it is the one Drupal step pack a Drupal CMS project installs.",
   "main": "tests/step-definitions/drupal-cms.steps.js",
   "files": [
