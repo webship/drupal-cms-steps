@@ -10,18 +10,45 @@ on:
 env:
   FORCE_COLOR: '1'
   LAUNCH_URL: http://drupal-cms-steps-site.ddev.site
-  # Accounts the users registry in cucumber.js logs in as (see README).
+  # Accounts the users registry in cucumber.js logs in as (see README, "Settings").
   DRUPAL_ADMIN_USER: admin
   DRUPAL_ADMIN_PASS: admin
   DRUPAL_EDITOR_USER: content_editor
   DRUPAL_EDITOR_PASS: content_editor
   DRUPAL_EDITOR_MAIL: content_editor@example.com
+  DRUPAL_AUTHENTICATED_USER: authenticated
+  DRUPAL_AUTHENTICATED_PASS: authenticated
 
 jobs:
   cucumber:
-    name: Cucumber (webship-js) against a DDEV-hosted Drupal CMS site
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The default: the Starter site template as the installer applies it.
+          - name: Starter site template
+            template: drupal_cms_starter
+            package: ''
+            recipes: ''
+          # The Starter template with two add-on recipes applied on top, which is
+          # what the recipe-gated scenarios (forms, search) run against.
+          - name: Starter with the Forms and Search recipes
+            template: drupal_cms_starter
+            package: ''
+            recipes: drupal_cms_forms,drupal_cms_search
+          # A site template that is not part of drupal/cms: required with Composer
+          # first, then applied by the installer like any other.
+          - name: Blank site template
+            template: drupal_cms_blank
+            package: drupal/drupal_cms_blank
+            recipes: ''
+    env:
+      DRUPAL_SITE_TEMPLATE: ${{ matrix.template }}
+      DRUPAL_SITE_TEMPLATE_PACKAGE: ${{ matrix.package }}
+      DRUPAL_CMS_RECIPES: ${{ matrix.recipes }}
 
     steps:
       - uses: actions/checkout@v4
@@ -41,7 +68,7 @@ jobs:
         with:
           ddevDir: drupal
 
-      - name: Build a default Drupal CMS site (Starter site template, which installs Drupal Canvas)
+      - name: Scaffold the Drupal CMS codebase
         working-directory: drupal
         run: |
           ddev composer create-project drupal/cms --no-interaction --no-progress
@@ -55,19 +82,9 @@ jobs:
           # start created the volume with; nothing is installed yet, so start over with the
           # configured one.
           ddev start -y --reset-database --omit-snapshot
-          # Non-interactive, the Drupal CMS installer applies the "Starter"
-          # site template, which enables the canvas module (Drupal Canvas).
-          ddev drush site:install drupal_cms_installer \
-            --site-name="Drupal CMS Steps" \
-            --account-name="$DRUPAL_ADMIN_USER" --account-pass="$DRUPAL_ADMIN_PASS" \
-            --yes
 
-      - name: Create the content editor test user
-        working-directory: drupal
-        run: |
-          ddev drush user:create "$DRUPAL_EDITOR_USER" --mail="$DRUPAL_EDITOR_MAIL" --password="$DRUPAL_EDITOR_PASS"
-          ddev drush user:role:add content_editor "$DRUPAL_EDITOR_USER"
-          ddev drush cache:rebuild
+      - name: Install the site template and the add-on recipes, seed the accounts
+        run: bash drupal/install-site-template.sh
 
       - name: Confirm Drupal Canvas is installed
         working-directory: drupal
@@ -101,7 +118,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cucumber-report
+          name: cucumber-report-${{ strategy.job-index }}
           path: |
             tests/reports/
             screenshots/

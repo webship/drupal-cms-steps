@@ -9,6 +9,7 @@ It is a **plugin for webship-js** and builds on [`@webship-js/drupal-core-steps`
 ## What's covered
 
 - **Dashboard**: `Given I am on the dashboard`, `I should see the dashboard`, `I should see the "Recent content" dashboard section`, `I should not see the "Announcements" dashboard section`
+- **Site templates and add-on recipes**: `Given the site template is "drupal_cms_starter"` and `Given the "drupal_cms_forms" recipe is applied` run a scenario only where that template or recipe is installed (skipped elsewhere), `the site template should be "..."`, `the site should have at least 1 Canvas page`; `drupal/install-site-template.sh` installs the fixture with any template and recipes (see "Site templates")
 - **Moderation Sidebar** (contrib): `When I open the moderation sidebar`, `the moderation sidebar should show "Draft"`, for sites that add that module (the Navigation sidebar, the top bar, the content types, the Gin-aware `save the content`, the required-field check and core's content moderation steps now live in the core pack and are available here)
 - **Email login**: `When I log in with the email address of "content editor"` (the Login Email or Username module Drupal CMS ships)
 - **Drupal Canvas, API**: `Given there is a new Canvas page "Landing" at "/landing"`, `When I add the "Heading" component to the bottom of the "Landing" Canvas page and publish it:` with a `| prop | value |` table, `When I create a Canvas page "…" at "/…" with the "…" component:`, `When I publish the pending Canvas changes`, `When I delete the "Landing" Canvas page`, `When I visit the "Landing" Canvas page`, `the "Landing" Canvas page should exist`, `the Canvas component library should list the "Heading" component`
@@ -124,6 +125,48 @@ And I am on the dashboard
 Then I see visible dashboard, sidebar
 ```
 
+## Site templates
+
+A Drupal CMS site is installed from a **site template** (a "Site" recipe the installer applies: Starter, Blank, or one from the [catalogue](https://new.drupal.org/browse/site-templates)) and may get **add-on recipes** afterwards (Forms, Search, SEO tools, Accessibility tools, ...). The pack supports both halves of testing them.
+
+**Installing.** `drupal/install-site-template.sh` installs the fixture site with any template and any add-on recipes, which is what CI runs in a matrix (Starter; Starter with Forms and Search; Blank):
+
+```bash
+cd drupal && ddev start && ddev composer create-project drupal/cms --no-interaction && cd ..
+DRUPAL_SITE_TEMPLATE=drupal_cms_starter DRUPAL_CMS_RECIPES=drupal_cms_forms,drupal_cms_search bash drupal/install-site-template.sh
+# A template that is not part of drupal/cms is required first:
+DRUPAL_SITE_TEMPLATE=drupal_cms_blank DRUPAL_SITE_TEMPLATE_PACKAGE=drupal/drupal_cms_blank bash drupal/install-site-template.sh
+# Your own template, from its Composer package:
+DRUPAL_SITE_TEMPLATE=my_site DRUPAL_SITE_TEMPLATE_PACKAGE=drupal/my_site bash drupal/install-site-template.sh
+```
+
+The script runs the installer non-interactively with the template as the form value (`drush site:install drupal_cms_installer installer_site_template_form.add_ons=<template>`), requires and applies each add-on recipe (`drush recipe`), creates the registry accounts, turns the telemetry prompt off, and gives the consent manager something to ask about (the fixture enables one optional Klaro service and the notice, as a site with analytics would).
+
+**Testing.** A site cannot say which template installed it, so the suite is told: `DRUPAL_SITE_TEMPLATE` and `DRUPAL_CMS_RECIPES` land in `worldParameters.siteTemplate` and `worldParameters.recipes`. A scenario states what it needs, and is skipped (reported as skipped, not failed) on a site that has something else:
+
+```gherkin
+Feature: The Starter site template
+  Background:
+    Given the site template is "drupal_cms_starter"
+    And I am a logged in user with the "admin" user
+
+  Scenario: The template installs its modules, theme, roles and content type
+    Then the "canvas" module should be installed
+    And the default theme should be "Mercury"
+    And the "Content editor" role should exist
+    And the "Utility page" content type should exist
+    And the front page path should be "/home"
+    And the "Main navigation" menu should contain "Home"
+    And the site should have at least 1 Canvas page
+
+  Scenario: The Forms recipe adds the contact form
+    Given the "drupal_cms_forms" recipe is applied
+    And I am on "/contact"
+    Then I should see the page title "Contact"
+```
+
+What a template promises is asserted with the core pack's site structure steps (modules, default theme, roles, menus, front page, content types, canonical URLs) and this pack's Canvas steps; `tests/features/site-template-starter.feature`, `site-template-blank.feature` and `recipes.feature` are the models to copy for a template of your own. `Then the site template should be "..."` restates what the suite was told, for the report.
+
 ## Quick example
 
 ```gherkin
@@ -146,6 +189,7 @@ This repository is itself a working webship-js project. Its `tests/features/*.fe
 
 | Area | Feature files |
 | --- | --- |
+| Site templates | `site-template-starter`, `site-template-blank`, `recipes` (each scenario states the template or recipe it needs and is skipped elsewhere; CI runs the Starter template, the Starter with the Forms and Search recipes, and the Blank template) |
 | Public pages and login | `home-page`, `login-logout` |
 | Administration | `admin-dashboard`, `navigation-toolbar`, `top-bar`, `user-management` |
 | Content | `content-management` |
@@ -162,15 +206,10 @@ ddev composer create-project drupal/cms --no-interaction
 sed -i '/ddev_version_constraint/d' .ddev/config.yaml
 ddev config --project-name=drupal-cms-steps-site --project-type=drupal --docroot=web
 ddev start -y --reset-database --omit-snapshot   # the scaffold pins a database version; nothing is installed yet
-ddev drush site:install drupal_cms_installer --site-name="Drupal CMS Steps" --account-name=admin --account-pass=admin --yes
-
-# Drupal CMS creates the "Content editor" role but no user for it.
-ddev drush user:create content_editor --mail="content_editor@example.com" --password="content_editor"
-ddev drush user:role:add content_editor content_editor
-ddev drush cache:rebuild
-# Drupal Canvas comes with the Starter site template; confirm it is enabled.
-ddev drush pm:list --status=enabled --type=module --format=list | grep -x canvas
 cd ..
+# The site template (Starter by default) and any add-on recipes, the accounts of the users
+# registry, and the consent manager's notice: see "Site templates".
+bash drupal/install-site-template.sh
 
 npm install
 npx playwright install --with-deps chromium

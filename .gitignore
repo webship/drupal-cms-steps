@@ -17,6 +17,7 @@ lerna-debug.log*
 # the DDEV project config itself is checked in.
 /drupal/*
 !/drupal/.ddev
+!/drupal/install-site-template.sh
 /drupal/.ddev/*
 !/drupal/.ddev/config.yaml
 
