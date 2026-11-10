@@ -4,7 +4,8 @@ Feature: Drupal Canvas
   So that the page builder Drupal CMS ships works end to end
 
   Background:
-    Given I am a logged in user with the "admin" user
+    Given the site template is "drupal_cms_starter"
+    And I am a logged in user with the "admin" user
 
   Scenario: The component library offers the theme's components
     Then the Canvas component library should list the "Heading" component

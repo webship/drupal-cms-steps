@@ -3,6 +3,11 @@ Feature: Content management
   I want to manage content
   So that I can review drafts and publish pages on the site
 
+  # The starter content, the Utility page type and the editorial workflow come
+  # with the Starter site template.
+  Background:
+    Given the site template is "drupal_cms_starter"
+
   Scenario: The content editor reviews the starter content in the content overview
     Given I am a logged in user with the "content editor" user
     And I am on the content overview page

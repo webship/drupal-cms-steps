@@ -3,6 +3,9 @@ Feature: Home page
   I want to load the Drupal CMS home page
   So that I know the site is up and serving the starter content
 
+  Background:
+    Given the site template is "drupal_cms_starter"
+
   Scenario: Anonymous visitor loads the home page
     Given I am not logged in
     And I am on the homepage
