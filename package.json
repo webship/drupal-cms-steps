@@ -1,11 +1,13 @@
 {
   "name": "@webship-js/drupal-cms-steps",
   "version": "2.0.0",
-  "description": "Drupal CMS specific Cucumber step definitions plugin for webship-js: the Navigation toolbar and dashboard, Drupal CMS content types and recipes, user management specifics and Drupal Canvas (editor and API), on top of @webship-js/drupal-core-steps.",
+  "description": "Drupal CMS specific Cucumber step definitions plugin for webship-js: the dashboard, email login, the cookie consent dialog, site templates and add-on recipes, and Drupal Canvas (editor and API); it brings @webship-js/drupal-core-steps along, so it is the one Drupal step pack a Drupal CMS project installs.",
   "main": "tests/step-definitions/drupal-cms.steps.js",
   "files": [
     "tests/step-definitions/drupal-cms.steps.js",
+    "tests/step-definitions/drupal-cms-defaults.js",
     "tests/step-definitions/drupal-canvas.steps.js",
+    "tests/selectors/drupal-cms.json",
     "README.md",
     "LICENSE"
   ],
@@ -50,15 +52,16 @@
     "node": ">= 20.0"
   },
   "devDependencies": {
-    "@webship-js/drupal-core-steps": "^2.0.0-beta1",
     "tsx": "^4.19.2",
     "webship-js": "^2.0.6"
   },
   "peerDependencies": {
-    "@webship-js/drupal-core-steps": "^2.0.0-beta1",
     "webship-js": "^2.0.6"
   },
   "overrides": {
     "@cucumber/cucumber": "^12"
+  },
+  "dependencies": {
+    "@webship-js/drupal-core-steps": "^2.1.0"
   }
 }
