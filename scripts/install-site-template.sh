@@ -28,9 +28,22 @@ if [ -n "$PACKAGE" ]; then
   echo "Requiring the site template package $PACKAGE"
   ddev composer require "$PACKAGE" --with-all-dependencies --no-interaction
 fi
-if [ ! -d "recipes/$TEMPLATE" ] && [ -z "$PACKAGE" ]; then
-  echo "The $TEMPLATE site template is not in recipes/; set DRUPAL_SITE_TEMPLATE_PACKAGE to its Composer package." >&2
-  exit 1
+# The recipes a package ships are unpacked into recipes/ by the drupal/core-recipe-unpack
+# plugin; the scaffold's own start hook does it too, but not when the codebase arrived after
+# that start. Running it here is idempotent.
+ddev composer drupal:recipe-unpack --no-interaction || true
+if [ ! -d "recipes/$TEMPLATE" ]; then
+  if [ -z "$PACKAGE" ]; then
+    PACKAGE="drupal/$TEMPLATE"
+    echo "The $TEMPLATE site template is not in recipes/; requiring $PACKAGE"
+    ddev composer require "$PACKAGE" --with-all-dependencies --no-interaction
+    ddev composer drupal:recipe-unpack --no-interaction || true
+  fi
+  if [ ! -d "recipes/$TEMPLATE" ]; then
+    echo "The $TEMPLATE site template is still not in recipes/ after requiring $PACKAGE." >&2
+    ls recipes >&2 || true
+    exit 1
+  fi
 fi
 
 # The installer applies the chosen template; the form value is the recipe folder name.
