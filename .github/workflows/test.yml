@@ -84,7 +84,7 @@ jobs:
           ddev start -y --reset-database --omit-snapshot
 
       - name: Install the site template and the add-on recipes, seed the accounts
-        run: bash drupal/install-site-template.sh
+        run: bash scripts/install-site-template.sh
 
       - name: Confirm Drupal Canvas is installed
         working-directory: drupal

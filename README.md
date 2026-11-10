@@ -9,7 +9,7 @@ It is a **plugin for webship-js** and builds on [`@webship-js/drupal-core-steps`
 ## What's covered
 
 - **Dashboard**: `Given I am on the dashboard`, `I should see the dashboard`, `I should see the "Recent content" dashboard section`, `I should not see the "Announcements" dashboard section`
-- **Site templates and add-on recipes**: `Given the site template is "drupal_cms_starter"` and `Given the "drupal_cms_forms" recipe is applied` run a scenario only where that template or recipe is installed (skipped elsewhere), `the site template should be "..."`, `the site should have at least 1 Canvas page`; `drupal/install-site-template.sh` installs the fixture with any template and recipes (see "Site templates")
+- **Site templates and add-on recipes**: `Given the site template is "drupal_cms_starter"` and `Given the "drupal_cms_forms" recipe is applied` run a scenario only where that template or recipe is installed (skipped elsewhere), `the site template should be "..."`, `the site should have at least 1 Canvas page`; `scripts/install-site-template.sh` installs the fixture with any template and recipes (see "Site templates")
 - **Cookie consent** (Klaro, which Drupal CMS ships): the suite pre-accepts it before every scenario (`acceptCookieConsent`, `KEEP_COOKIE_CONSENT=1` to keep the dialog), `I should (not) see the cookie consent dialog`, `I accept|decline the cookie consent`, `the cookie consent is not given yet`; the Autosave Form "resume your draft?" dialog is discarded after a step on a node form
 - **Moderation Sidebar** (contrib): `When I open the moderation sidebar`, `the moderation sidebar should show "Draft"`, for sites that add that module (the Navigation sidebar, the top bar, the content types, the Gin-aware `save the content`, the required-field check and core's content moderation steps now live in the core pack and are available here)
 - **Email login**: `When I log in with the email address of "content editor"` (the Login Email or Username module Drupal CMS ships)
@@ -130,15 +130,15 @@ Then I see visible dashboard, sidebar
 
 A Drupal CMS site is installed from a **site template** (a "Site" recipe the installer applies: Starter, Blank, or one from the [catalogue](https://new.drupal.org/browse/site-templates)) and may get **add-on recipes** afterwards (Forms, Search, SEO tools, Accessibility tools, ...). The pack supports both halves of testing them.
 
-**Installing.** `drupal/install-site-template.sh` installs the fixture site with any template and any add-on recipes, which is what CI runs in a matrix (Starter; Starter with Forms and Search; Blank):
+**Installing.** `scripts/install-site-template.sh` installs the fixture site with any template and any add-on recipes, which is what CI runs in a matrix (Starter; Starter with Forms and Search; Blank):
 
 ```bash
 cd drupal && ddev start && ddev composer create-project drupal/cms --no-interaction && cd ..
-DRUPAL_SITE_TEMPLATE=drupal_cms_starter DRUPAL_CMS_RECIPES=drupal_cms_forms,drupal_cms_search bash drupal/install-site-template.sh
+DRUPAL_SITE_TEMPLATE=drupal_cms_starter DRUPAL_CMS_RECIPES=drupal_cms_forms,drupal_cms_search bash scripts/install-site-template.sh
 # A template that is not part of drupal/cms is required first:
-DRUPAL_SITE_TEMPLATE=drupal_cms_blank DRUPAL_SITE_TEMPLATE_PACKAGE=drupal/drupal_cms_blank bash drupal/install-site-template.sh
+DRUPAL_SITE_TEMPLATE=drupal_cms_blank DRUPAL_SITE_TEMPLATE_PACKAGE=drupal/drupal_cms_blank bash scripts/install-site-template.sh
 # Your own template, from its Composer package:
-DRUPAL_SITE_TEMPLATE=my_site DRUPAL_SITE_TEMPLATE_PACKAGE=drupal/my_site bash drupal/install-site-template.sh
+DRUPAL_SITE_TEMPLATE=my_site DRUPAL_SITE_TEMPLATE_PACKAGE=drupal/my_site bash scripts/install-site-template.sh
 ```
 
 The script runs the installer non-interactively with the template as the form value (`drush site:install drupal_cms_installer installer_site_template_form.add_ons=<template>`), requires and applies each add-on recipe (`drush recipe`), creates the registry accounts, turns the telemetry prompt off, and gives the consent manager something to ask about (the fixture enables one optional Klaro service and the notice, as a site with analytics would).
@@ -210,7 +210,7 @@ ddev start -y --reset-database --omit-snapshot   # the scaffold pins a database 
 cd ..
 # The site template (Starter by default) and any add-on recipes, the accounts of the users
 # registry, and the consent manager's notice: see "Site templates".
-bash drupal/install-site-template.sh
+bash scripts/install-site-template.sh
 
 npm install
 npx playwright install --with-deps chromium

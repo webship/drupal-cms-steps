@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # Installs the fixture Drupal CMS site with a site template and, optionally, add-on recipes:
 #
-#   DRUPAL_SITE_TEMPLATE=drupal_cms_starter DRUPAL_CMS_RECIPES=drupal_cms_forms,drupal_cms_search bash drupal/install-site-template.sh
+#   DRUPAL_SITE_TEMPLATE=drupal_cms_starter DRUPAL_CMS_RECIPES=drupal_cms_forms,drupal_cms_search bash scripts/install-site-template.sh
 #
-# Run from the repository root with the DDEV project in drupal/ started (see README,
-# "Running this repo's own test suite" and "Site templates"). A template that is not part of
+# Run from the repository root with the DDEV project in drupal/ started and the codebase
+# scaffolded (see README, "Running this repo's own test suite" and "Site templates"). It lives
+# outside drupal/ because `ddev composer create-project` wants that folder empty. A template that is not part of
 # drupal/cms (one from the catalogue, or your own) is required with Composer first when
 # DRUPAL_SITE_TEMPLATE_PACKAGE names its package (drupal/<name> by default for a drupal_cms_*
 # template is already in the codebase).
 set -euo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/../drupal"
 
 TEMPLATE="${DRUPAL_SITE_TEMPLATE:-drupal_cms_starter}"
 PACKAGE="${DRUPAL_SITE_TEMPLATE_PACKAGE:-}"
