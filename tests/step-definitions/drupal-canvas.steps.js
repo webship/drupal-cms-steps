@@ -910,3 +910,71 @@ When(/^(I |we )*publish the Canvas page changes through the editor$/, { timeout:
   }
   await smartSettle(this.page, budget(this));
 });
+
+// ---------------------------------------------------------------------------
+// Library search and component counts
+// ---------------------------------------------------------------------------
+
+/**
+ * Narrow the open Canvas Library tab with its search box, the way a site
+ * builder finds a component in a long list; the list then shows only the
+ * matching items, which "the Canvas Library ... tab should list" reads.
+ * Clear it with an empty text.
+ *
+ * Example #1: When I filter the Canvas Library by "Heading"
+ * Example #2: And I filter the Canvas Library by "Hero"
+ * Example #3: When we filter the Canvas Library by "Text"
+ * Example #4: And I search the Canvas Library for "Card"
+ * Example #5: When I filter the Canvas Library by ""
+ *
+ */
+When(/^(I |we )*(?:filter|search) the Canvas Library (?:by|for) "([^"]*)"$/, { timeout: 30000 }, async function (pronounCase, text) {
+  const box = this.page.locator('[data-testid^="canvas-library"] input[type="search"], [data-testid^="canvas-library"] input[placeholder], [data-testid="canvas-primary-panel"] input[type="search"], [data-testid="canvas-primary-panel"] input[placeholder*="earch"]').first();
+  try {
+    await box.waitFor({ state: 'visible', timeout: 15000 });
+  } catch (error) {
+    throw friendly({
+      message: 'The Canvas Library shows no search box.',
+      cause: error,
+      hint: 'Open a Library tab first ("I open the \\"Components\\" tab in the Canvas Library").',
+    });
+  }
+  await box.click();
+  await box.fill('');
+  if (text) await box.pressSequentially(text, { delay: 40 });
+  await smartSettle(this.page, budget(this));
+});
+
+/**
+ * Assert how many components a Canvas page holds in its content region,
+ * through the layout API (the published layout plus any pending change),
+ * which is the cheap check after an insert or a publish.
+ *
+ * Example #1: Then the "Landing" Canvas page should have 1 component
+ * Example #2: And the "Landing" Canvas page should have 2 components
+ * Example #3: Then the "Home" Canvas page should have at least 1 component
+ * Example #4: And the "Canvas API page" Canvas page should have at least 2 components
+ * Example #5: Then the "Empty page" Canvas page should have 0 components
+ *
+ */
+Then(/^the "([^"]*)" Canvas page should have (at least )?(\d+) components?$/, async function (title, atLeast, expected) {
+  const target = await requireCanvasPage(this.page, title);
+  const result = await canvasRequest(this.page, `/canvas/api/v0/layout/canvas_page/${target.id}`);
+  if (!result.ok) {
+    throw friendly({
+      message: `Could not read the layout of the "${title}" Canvas page.`,
+      cause: `the layout API answered ${result.status}`,
+    });
+  }
+  const content = Array.isArray(result.data.layout) && result.data.layout.find((r) => r.nodeType === 'region' && r.id === 'content');
+  const count = content && Array.isArray(content.components) ? content.components.length : 0;
+  const want = parseInt(expected, 10);
+  const ok = atLeast ? count >= want : count === want;
+  assert.ok(
+    ok,
+    friendly({
+      message: `Expected the "${title}" Canvas page to have ${atLeast ? 'at least ' : ''}${want} component(s).`,
+      cause: `its content region holds ${count}`,
+    }).message
+  );
+});
