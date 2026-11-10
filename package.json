@@ -6,6 +6,7 @@
   "files": [
     "tests/step-definitions/drupal-cms.steps.js",
     "tests/step-definitions/drupal-cms-defaults.js",
+    "tests/step-definitions/drupal-cms-consent.steps.js",
     "tests/step-definitions/drupal-canvas.steps.js",
     "tests/step-definitions/drupal-site-templates.steps.js",
     "tests/selectors/drupal-cms.json",

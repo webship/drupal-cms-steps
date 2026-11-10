@@ -10,10 +10,11 @@ It is a **plugin for webship-js** and builds on [`@webship-js/drupal-core-steps`
 
 - **Dashboard**: `Given I am on the dashboard`, `I should see the dashboard`, `I should see the "Recent content" dashboard section`, `I should not see the "Announcements" dashboard section`
 - **Site templates and add-on recipes**: `Given the site template is "drupal_cms_starter"` and `Given the "drupal_cms_forms" recipe is applied` run a scenario only where that template or recipe is installed (skipped elsewhere), `the site template should be "..."`, `the site should have at least 1 Canvas page`; `drupal/install-site-template.sh` installs the fixture with any template and recipes (see "Site templates")
+- **Cookie consent** (Klaro, which Drupal CMS ships): the suite pre-accepts it before every scenario (`acceptCookieConsent`, `KEEP_COOKIE_CONSENT=1` to keep the dialog), `I should (not) see the cookie consent dialog`, `I accept|decline the cookie consent`, `the cookie consent is not given yet`; the Autosave Form "resume your draft?" dialog is discarded after a step on a node form
 - **Moderation Sidebar** (contrib): `When I open the moderation sidebar`, `the moderation sidebar should show "Draft"`, for sites that add that module (the Navigation sidebar, the top bar, the content types, the Gin-aware `save the content`, the required-field check and core's content moderation steps now live in the core pack and are available here)
 - **Email login**: `When I log in with the email address of "content editor"` (the Login Email or Username module Drupal CMS ships)
 - **Drupal Canvas, API**: `Given there is a new Canvas page "Landing" at "/landing"`, `When I add the "Heading" component to the bottom of the "Landing" Canvas page and publish it:` with a `| prop | value |` table, `When I create a Canvas page "…" at "/…" with the "…" component:`, `When I publish the pending Canvas changes`, `When I delete the "Landing" Canvas page`, `When I visit the "Landing" Canvas page`, `the "Landing" Canvas page should exist`, `the Canvas component library should list the "Heading" component`
-- **Drupal Canvas, editor**: `When I open the "Landing" Canvas page in the editor`, `I should see the Canvas editor`, `When I open the "Components" tab in the Canvas Library`, `the Canvas Library "Components" tab should list "Heading"`, `When I insert the "Heading" component from the Canvas Library`, `When I set the Canvas component option "Heading" to "Welcome"`, `When I publish the Canvas page changes through the editor`
+- **Drupal Canvas, editor**: `When I open the "Landing" Canvas page in the editor`, `I should see the Canvas editor`, `When I open the "Components" tab in the Canvas Library`, `When I filter the Canvas Library by "Heading"`, `the Canvas Library "Components" tab should list "Heading"`, `When I insert the "Heading" component from the Canvas Library`, `When I set the Canvas component option "Heading" to "Welcome"`, `When I publish the Canvas page changes through the editor`, `the "Landing" Canvas page should have 2 components`
 
 Every step accepts the `I` and `we` pronoun forms, and every assertion reads both polarities from one definition. Each step is documented inline in `tests/step-definitions/drupal-cms.steps.js` and `tests/step-definitions/drupal-canvas.steps.js` with its own Gherkin examples.
 
@@ -190,7 +191,7 @@ This repository is itself a working webship-js project. Its `tests/features/*.fe
 | Area | Feature files |
 | --- | --- |
 | Site templates | `site-template-starter`, `site-template-blank`, `recipes` (each scenario states the template or recipe it needs and is skipped elsewhere; CI runs the Starter template, the Starter with the Forms and Search recipes, and the Blank template) |
-| Public pages and login | `home-page`, `login-logout` |
+| Public pages and login | `home-page`, `login-logout`, `cookie-consent` |
 | Administration | `admin-dashboard`, `navigation-toolbar`, `top-bar`, `user-management` |
 | Content | `content-management` |
 | Drupal Canvas | `canvas` |

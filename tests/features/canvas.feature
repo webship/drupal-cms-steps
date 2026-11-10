@@ -23,7 +23,9 @@ Feature: Drupal Canvas
     And I should see "Heading from the API"
     When I add the "Text" component to the bottom of the "Canvas API page" Canvas page
     And I publish the pending Canvas changes
-    And I visit the "Canvas API page" Canvas page
+    Then the "Canvas API page" Canvas page should have 2 components
+    And the "Canvas API page" Canvas page should have at least 1 component
+    When I visit the "Canvas API page" Canvas page
     Then I should see "Heading from the API"
 
   Scenario: A page with one configured component is created in one step
@@ -42,7 +44,11 @@ Feature: Drupal Canvas
     Then the Canvas Library "Components" tab should list "Heading"
     And the Canvas Library "Components" tab should list "Hero CTA"
     And the Canvas Library "Components" tab should not list "Legacy slider"
-    When I insert the "Heading" component from the Canvas Library
+    When I filter the Canvas Library by "Heading"
+    Then the Canvas Library "Components" tab should list "Heading"
+    And the Canvas Library "Components" tab should not list "Hero CTA"
+    When I filter the Canvas Library by ""
+    And I insert the "Heading" component from the Canvas Library
     And I set the Canvas component option "Heading" to "Heading from the editor"
     And I publish the Canvas page changes through the editor
     And I visit the "Canvas editor page" Canvas page

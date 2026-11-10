@@ -30,8 +30,8 @@
     "canvas first component": "[aria-label^='Draggable component']",
     "canvas publish button": "[data-testid='canvas-publish-review']",
     "cookie consent dialog": ".klaro .cookie-modal, .klaro .cookie-notice, .klaro .cm-modal",
-    "cookie consent accept": ".klaro .cm-btn-accept-all, .klaro .cm-btn-accept, .klaro .cn-ok",
-    "cookie consent decline": ".klaro .cm-btn-decline, .klaro .cn-decline",
+    "cookie consent accept": ".klaro button.cm-btn-accept-all, .klaro button.cm-btn-accept, .klaro button.cm-btn-success:not(.cn-decline)",
+    "cookie consent decline": ".klaro button.cn-decline, .klaro button.cm-btn-decline, .klaro button.cm-btn-danger",
     "cookie consent settings": ".klaro .cm-btn-learn-more, .klaro .cn-learn-more"
   },
   "xpath": {}
