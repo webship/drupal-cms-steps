@@ -8,11 +8,8 @@ It is a **plugin for webship-js** and builds on [`@webship-js/drupal-core-steps`
 
 ## What's covered
 
-- **Navigation sidebar**: `the navigation toolbar should list "Pages"`, `the navigation toolbar should not list "People"`, `When I click "Media" in the navigation sidebar`
-- **Top bar**: `the top bar should offer the "Edit" action`, `When I open the top bar page actions`, `When I choose the "Revisions" action in the top bar`
 - **Dashboard**: `Given I am on the dashboard`, `I should see the dashboard`, `I should see the "Recent content" dashboard section`, `I should not see the "Announcements" dashboard section`
-- **Content types and the node form**: `the "Utility page" content type should exist`, `When I save the content` (the Gin sticky Save), `the "Description" field should block submission as required`
-- **Editorial workflow**: `the content moderation state should be "Draft"`, `When I change the moderation state to "Published"`; plus the contrib Moderation Sidebar steps (`When I open the moderation sidebar`, `the moderation sidebar should show "Draft"`) for sites that add that module
+- **Moderation Sidebar** (contrib): `When I open the moderation sidebar`, `the moderation sidebar should show "Draft"`, for sites that add that module (the Navigation sidebar, the top bar, the content types, the Gin-aware `save the content`, the required-field check and core's content moderation steps now live in the core pack and are available here)
 - **Email login**: `When I log in with the email address of "content editor"` (the Login Email or Username module Drupal CMS ships)
 - **Drupal Canvas, API**: `Given there is a new Canvas page "Landing" at "/landing"`, `When I add the "Heading" component to the bottom of the "Landing" Canvas page and publish it:` with a `| prop | value |` table, `When I create a Canvas page "…" at "/…" with the "…" component:`, `When I publish the pending Canvas changes`, `When I delete the "Landing" Canvas page`, `When I visit the "Landing" Canvas page`, `the "Landing" Canvas page should exist`, `the Canvas component library should list the "Heading" component`
 - **Drupal Canvas, editor**: `When I open the "Landing" Canvas page in the editor`, `I should see the Canvas editor`, `When I open the "Components" tab in the Canvas Library`, `the Canvas Library "Components" tab should list "Heading"`, `When I insert the "Heading" component from the Canvas Library`, `When I set the Canvas component option "Heading" to "Welcome"`, `When I publish the Canvas page changes through the editor`
@@ -23,43 +20,109 @@ Every step accepts the `I` and `we` pronoun forms, and every assertion reads bot
 
 - Node.js >= 20
 - A [webship-js](https://www.npmjs.com/package/webship-js) 2.x test project
-- `@webship-js/drupal-core-steps` 2.x
 - A Drupal CMS 2.x site to test against (any site template; the Canvas steps need the `canvas` module, which the Starter site template installs)
 
 ## Installation
 
 ```bash
-npm install --save-dev webship-js @webship-js/drupal-core-steps @webship-js/drupal-cms-steps
+npm install --save-dev webship-js @webship-js/drupal-cms-steps
 ```
 
-Add the three step sources to your project's `cucumber.js`, in this order: webship-js, then the core pack, then this pack.
+That is the whole install: this pack depends on [`@webship-js/drupal-core-steps`](https://www.npmjs.com/package/@webship-js/drupal-core-steps) and loads its steps itself, so a Drupal CMS project installs **one** Drupal step pack and lists **two** step sources in `cucumber.js`, in this order:
 
 ```javascript
 module.exports = {
   default: {
     require: [
-      'node_modules/webship-js/tests/step-definitions/**/*.js',                    // webship-js core steps
-      'node_modules/@webship-js/drupal-core-steps/tests/step-definitions/**/*.js', // Drupal core step pack
-      'node_modules/@webship-js/drupal-cms-steps/tests/step-definitions/**/*.js',  // this pack
-      'tests/step-definitions/**/*.js',                                            // your own custom steps, if any
+      'node_modules/webship-js/tests/step-definitions/**/*.js',                   // webship-js core steps
+      'node_modules/@webship-js/drupal-cms-steps/tests/step-definitions/**/*.js', // this pack, which brings the Drupal core pack along
+      'tests/step-definitions/**/*.js',                                           // your own custom steps, if any
     ],
     paths: ['tests/features/**/*.feature'],
     worldParameters: {
       launchUrl: process.env.LAUNCH_URL || 'https://your-drupal-cms-site.example',
-      users: {
-        admin: { username: 'admin', password: process.env.DRUPAL_ADMIN_PASS || 'admin' },
-        'content editor': {
-          username: 'content_editor',
-          password: process.env.DRUPAL_EDITOR_PASS || 'content_editor',
-          email: 'content_editor@example.com',
-        },
-      },
+      // ... the settings below
     },
   },
 };
 ```
 
-The `users` registry is what the core pack's `Given I am a logged in user with the "admin" user` step reads; the `email` key is what this pack's email login step reads. Run `npx cucumber-js --dry-run` once after wiring the three sources: it reports any undefined or ambiguous step before a browser is opened.
+A project that also lists the core pack's own glob keeps working (Node loads a file once). Run `npx cucumber-js --dry-run` once after wiring the sources: it reports any undefined or ambiguous step before a browser is opened.
+
+## Settings
+
+Everything the pack and the core pack read lives under `worldParameters` in `cucumber.js`. The block below is what this repository runs with and what a new project copies; every value has an environment variable so nothing site-specific is committed. It is complete on its own: a Drupal CMS project installs this pack and nothing else.
+
+```javascript
+worldParameters: {
+  launchUrl: process.env.LAUNCH_URL || process.env.DDEV_PRIMARY_URL || 'http://localhost:8080',
+
+  // The site template the site was installed with, and the add-on recipes applied on top
+  // (see "Site templates"); the scenarios that need another one skip.
+  siteTemplate: process.env.DRUPAL_SITE_TEMPLATE || 'drupal_cms_starter',
+  recipes: (process.env.DRUPAL_CMS_RECIPES || '').split(',').map((r) => r.trim()).filter(Boolean),
+
+  blockThirdPartyRequests: process.env.ALLOW_THIRD_PARTY_REQUESTS !== '1', // keep runs hermetic (tagify loads from a CDN)
+  acceptCookieConsent: process.env.KEEP_COOKIE_CONSENT !== '1',           // pre-accept the Klaro consent dialog
+
+  // The accounts `Given I am a logged in user with the "<handle>" user` logs in as, with the
+  // roles `Given I add the testing users` grants when it creates them.
+  users: {
+    admin:            { username: process.env.DRUPAL_ADMIN_USER || 'admin', password: process.env.DRUPAL_ADMIN_PASS || 'admin', email: process.env.DRUPAL_ADMIN_MAIL || 'admin@example.com', isAdmin: true },
+    'content editor': { username: process.env.DRUPAL_EDITOR_USER || 'content_editor', password: process.env.DRUPAL_EDITOR_PASS || 'content_editor', email: process.env.DRUPAL_EDITOR_MAIL || 'content_editor@example.com', roles: ['content_editor'] },
+    authenticated:    { username: process.env.DRUPAL_AUTHENTICATED_USER || 'authenticated', password: process.env.DRUPAL_AUTHENTICATED_PASS || 'authenticated', email: process.env.DRUPAL_AUTHENTICATED_MAIL || 'authenticated@example.com', roles: [] },
+    anonymous:        { name: process.env.DRUPAL_ANONYMOUS_NAME || 'Webship QA', email: process.env.DRUPAL_ANONYMOUS_EMAIL || 'qa@example.com' },
+  },
+
+  minWaitTime: { page: parseInt(process.env.WEBSHIP_PAGE_WAIT || '3000', 10), before_scenario: 0, after_scenario: 0, before_step: 0, after_step: 0 },
+
+  selectors: {
+    css: {}, xpath: {},            // your own names win over the two presets
+    filesPath: './tests/selectors/', files: [],
+    offset: 60,
+    breakpoints: { xs: { width: 375, height: 667 }, sm: { width: 576, height: 800 }, md: { width: 768, height: 1024 },
+                   lg: { width: 992, height: 768 }, xl: { width: 1200, height: 900, default: true },
+                   xxl: { width: 1400, height: 900 }, xxxl: { width: 1920, height: 1080 } },
+  },
+
+  screenshot: { dir: './screenshots', purge: false, onFailed: true, onEveryStep: false, alwaysFullscreen: false,
+                failedPrefix: 'failed_', filenamePattern: '{datetime}.{feature_file}.feature_{step_line}.{ext}',
+                filenamePatternFailed: '{failed_prefix}{datetime}.{feature_file}.feature_{step_line}.{ext}', infoTypes: '' },
+  video: { mode: process.env.WEBSHIP_VIDEO || 'off', dir: './videos', size: { width: 1280, height: 720 },
+           filenamePattern: '{datetime}.{feature_file}.{scenario}.{status}.{ext}' },
+  javascript: { mode: process.env.WEBSHIP_JS_ERROR_MODE || 'warn', levels: ['error'], ignore: '', beforeScenario: false, afterScenario: true },
+}
+```
+
+| Variable | Default | Used for |
+| --- | --- | --- |
+| `LAUNCH_URL` | `DDEV_PRIMARY_URL`, then `http://localhost:8080` | the site under test |
+| `DRUPAL_SITE_TEMPLATE` / `DRUPAL_CMS_RECIPES` | `drupal_cms_starter` / none | what the site was installed with (see "Site templates") |
+| `DRUPAL_ADMIN_USER` / `DRUPAL_ADMIN_PASS` / `DRUPAL_ADMIN_MAIL` | `admin` / `admin` / `admin@example.com` | the `admin` handle (the installer's account) |
+| `DRUPAL_EDITOR_USER` / `DRUPAL_EDITOR_PASS` / `DRUPAL_EDITOR_MAIL` | `content_editor` / `content_editor` / `content_editor@example.com` | the `content editor` handle (Drupal CMS creates the role but no user; the pack creates it) |
+| `DRUPAL_AUTHENTICATED_USER` / `DRUPAL_AUTHENTICATED_PASS` / `DRUPAL_AUTHENTICATED_MAIL` | `authenticated` / `authenticated` / `authenticated@example.com` | the `authenticated` handle, an account with no role |
+| `DRUPAL_ANONYMOUS_NAME` / `DRUPAL_ANONYMOUS_EMAIL` | `Webship QA` / `qa@example.com` | what an anonymous visitor types into a contact form |
+| `ALLOW_THIRD_PARTY_REQUESTS=1` | off | let cross-origin requests through |
+| `KEEP_COOKIE_CONSENT=1` | off | show the cookie consent dialog instead of pre-accepting it |
+| `WEBSHIP_PAGE_WAIT` | `3000` | the settle budget per page; `8000` is the safer value for the Gin admin and the Canvas editor on a slow runner |
+| `WEBSHIP_STEP_TIMEOUT` | `45000` | the step timeout (a `timeout` key in cucumber.js is ignored: webship-js sets it when it loads) |
+| `HEADLESS` / `SLOW_MO` | `true` / `300` (`800` when headed) | `playwright.config.ts`; `npm run test:headed` sets `HEADLESS=false` |
+| `CUCUMBER_TAGS` / `FEATURES` | `not @wip and not @auth-setup` / all features | the lane to run, a subset of feature files |
+| `WEBSHIP_VIDEO`, `WEBSHIP_JS_ERROR_MODE`, `WEBSHIP_SCREENSHOT_*`, `WEBSHIP_SELECTORS_*` | see the block above | webship-js's own switches |
+
+### Users registry
+
+The `users` registry is what the core pack's `Given I am a logged in user with the "admin" user` step reads (the login is verified: a refused login fails with the site's message), and what `Given I add the testing users` creates on the site when the accounts are missing, through `/admin/people/create`, with the `roles` each entry lists; `isAdmin: true` marks the installer's account, which is never created or removed. The `email` key is what this pack's email login step reads (`When I log in with the email address of "content editor"`, through the Login Email or Username module Drupal CMS ships).
+
+### Named selectors
+
+webship-js's named-selector steps (`Then I see visible <name>`, `Then I don't see <name>`, `When I click on <name>`) read names from a registry. Two presets are merged into every scenario, the core pack's for core's markup (`status message`, `page title`, `breadcrumb`, `navigation sidebar`, `save button`, `details`, `ajax throbber`, `media library dialog`, ...) and this pack's [`tests/selectors/drupal-cms.json`](tests/selectors/drupal-cms.json) for what Drupal CMS adds: the Gin admin theme (`header bar`, `sidebar`, `sticky form actions`, `sticky save button`, `more actions`, `dark mode toggle`, `edit form`, `confirm form`, `breadcrumb back`, `message item`), the `dashboard` and `dashboard section`, the Canvas editor (`canvas editor frame`, `canvas side menu`, `canvas topbar`, `canvas primary panel`, `canvas contextual panel`, `canvas library button`, `canvas layers button`, `canvas components library`, `canvas patterns library`, `canvas library search`, `canvas first component`, `canvas publish button`) and the consent dialog (`cookie consent dialog`, `cookie consent accept`, `cookie consent decline`). A name you define in `worldParameters.selectors` or load from `files` wins over both.
+
+```gherkin
+Given I am a logged in user with the "admin" user
+And I am on the dashboard
+Then I see visible dashboard, sidebar
+```
 
 ## Quick example
 
