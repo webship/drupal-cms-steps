@@ -12,7 +12,7 @@
 // Drupal Canvas steps live in ./drupal-canvas.steps.js; the site template
 // steps in ./drupal-site-templates.steps.js.
 //
-// Login, the testing users, named pages, status messages, page titles,
+// Login by handle, named pages, status messages, page titles,
 // breadcrumbs, listings and their operations, the rich text editor, the media
 // library, access control, the Navigation sidebar and top bar, the node form's
 // Save button, content types, content moderation, site structure and Layout
