@@ -9,7 +9,10 @@ on:
 
 env:
   FORCE_COLOR: '1'
-  LAUNCH_URL: http://drupal-cms-steps-site.ddev.site
+  # The HTTPS address: DDEV serves it with a certificate of its own authority
+  # (mkcert), and the spam protection of the contact form (ALTCHA) needs a
+  # secure context to solve its proof of work.
+  LAUNCH_URL: https://drupal-cms-steps-site.ddev.site
   # Accounts the users registry in cucumber.js logs in as (see README, "Settings").
   DRUPAL_ADMIN_USER: admin
   DRUPAL_ADMIN_PASS: admin
@@ -93,7 +96,7 @@ jobs:
       - name: Wait for the site to answer over its DDEV URL
         run: |
           for i in $(seq 1 30); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' "$LAUNCH_URL/user/login" || true)
+            code=$(curl -ks -o /dev/null -w '%{http_code}' "$LAUNCH_URL/user/login" || true)
             [ "$code" = "200" ] && exit 0
             sleep 2
           done

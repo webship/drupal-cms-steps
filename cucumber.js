@@ -67,6 +67,11 @@ module.exports = {
       // to see the dialog, and use the cookie consent steps instead.
       acceptCookieConsent: process.env.KEEP_COOKIE_CONSENT !== '1',
 
+      // The seconds Honeypot wants between the load of a form and its
+      // submission (5 on Drupal CMS with the Forms recipe; 0 for no limit).
+      // "I pass the spam protection of the form" waits them out.
+      formTimeLimit: parseInt(process.env.DRUPAL_FORM_TIME_LIMIT || '5', 10),
+
       // ---------------------------------------------------------------------
       // Users registry: the accounts "I am a logged in user with the "<handle>"
       // user" logs in as. Accounts are configuration: the script that builds
