@@ -78,6 +78,11 @@ Feature: Content management
     And the content moderation state should not be "Draft"
     When I delete the content item I am viewing
     Then I should see a status message "has been deleted."
+    # The deleted page is in the trash, with its URL alias: the administrator purges it.
+    Given I am a logged in user with the "admin" user
+    Then the content trash should hold "Webship acceptance page"
+    When I purge "Webship acceptance page" from the content trash
+    Then the content trash should not hold "Webship acceptance page"
 
   Scenario: Anonymous visitors cannot reach the content overview
     Given I am not logged in

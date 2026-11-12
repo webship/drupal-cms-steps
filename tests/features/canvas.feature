@@ -28,6 +28,9 @@ Feature: Drupal Canvas
     And the "Canvas API page" Canvas page should have at least 1 component
     When I visit the "Canvas API page" Canvas page
     Then I should see "Heading from the API"
+    When I delete the "Canvas API page" Canvas page
+    And I purge "Canvas API page" from the Canvas pages trash
+    Then the Canvas pages trash should not hold "Canvas API page"
 
   Scenario: A page with one configured component is created in one step
     When I create a Canvas page "Canvas one-shot page" at "/canvas-one-shot-page" with the "sdc.mercury.heading" component:
@@ -35,6 +38,9 @@ Feature: Drupal Canvas
     And I visit the "Canvas one-shot page" Canvas page
     Then I should see "One-shot heading"
     And the "Canvas one-shot page" Canvas page should exist
+    When I delete the "Canvas one-shot page" Canvas page
+    And I purge "Canvas one-shot page" from the Canvas pages trash
+    Then the "Canvas one-shot page" Canvas page should not exist
 
   @critical
   Scenario: A component is inserted and published through the editor
@@ -54,6 +60,9 @@ Feature: Drupal Canvas
     And I publish the Canvas page changes through the editor
     And I visit the "Canvas editor page" Canvas page
     Then I should see "Heading from the editor"
+    When I delete the "Canvas editor page" Canvas page
+    And I purge "Canvas editor page" from the Canvas pages trash
+    Then the Canvas pages trash should not hold "Canvas editor page"
 
   Scenario: A fresh install ships no patterns yet
     When I open the "Home" Canvas page in the editor

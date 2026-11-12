@@ -97,7 +97,21 @@ async function listCanvasPages(page) {
  */
 async function findCanvasPage(page, title) {
   const pages = await listCanvasPages(page);
-  return pages.find((p) => p.title === title) || null;
+  return matchCanvasPage(pages, title);
+}
+
+/**
+ * Pick a page by its title. A page renamed in the editor keeps its published
+ * title until the change is published, and the list carries the new one as
+ * `autoSaveLabel`: the published title wins, the pending one is accepted, so
+ * a page an editor just named can be addressed by that name.
+ *
+ * @param {Array<{id: number, title: string, autoSaveLabel?: string|null}>} pages
+ * @param {string} title
+ * @returns {object|null}
+ */
+function matchCanvasPage(pages, title) {
+  return pages.find((p) => p.title === title) || pages.find((p) => p.autoSaveLabel === title) || null;
 }
 
 /**
@@ -109,7 +123,7 @@ async function findCanvasPage(page, title) {
  */
 async function requireCanvasPage(page, title) {
   const pages = await listCanvasPages(page);
-  const match = pages.find((p) => p.title === title);
+  const match = matchCanvasPage(pages, title);
   if (!match) {
     throw friendly({
       message: `No Canvas page titled "${title}" was found.`,
@@ -879,6 +893,7 @@ When(/^(I |we )*set the Canvas component option "([^"]*)" to "([^"]*)"$/, { time
  *
  */
 When(/^(I |we )*publish the Canvas page changes through the editor$/, { timeout: 120000 }, async function (pronounCase) {
+  let refused = null;
   try {
     const review = this.page.getByTestId('canvas-publish-review');
     await review.waitFor({ state: 'visible', timeout: 20000 });
@@ -889,7 +904,8 @@ When(/^(I |we )*publish the Canvas page changes through the editor$/, { timeout:
     await review.click();
     const selectAll = this.page.getByTestId('canvas-publish-review-select-all');
     if (await selectAll.isVisible({ timeout: 10000 }).catch(() => false)) {
-      await selectAll.click();
+      // The box toggles: leave it alone when everything is selected already.
+      if ((await selectAll.getAttribute('aria-checked')) !== 'true') await selectAll.click();
     } else {
       const checkbox = this.page.getByRole('checkbox', { name: /select all/i }).first();
       if (await checkbox.isVisible({ timeout: 5000 }).catch(() => false)) await checkbox.click();
@@ -897,15 +913,31 @@ When(/^(I |we )*publish the Canvas page changes through the editor$/, { timeout:
     const publishButton = this.page.getByRole('button', { name: /Publish (\d+ )?(selected|all|changes?)/i }).first();
     await publishButton.waitFor({ state: 'visible', timeout: 15000 });
     await publishButton.click();
-    await this.page.waitForFunction(() => {
+    // The publish ends in one of two ways: the widget reads "No changes"
+    // again, or it stays open and names what Canvas refused.
+    const outcome = await this.page.waitForFunction(() => {
       const button = document.querySelector('[data-testid="canvas-publish-review"]');
-      return Boolean(button && /no changes/i.test(button.textContent));
+      if (button && /no changes/i.test(button.textContent)) return 'published';
+      const content = document.querySelector('[data-testid="canvas-publish-reviews-content"]');
+      if (content && /\b\d+ Errors?\b/.test(content.textContent)) return 'refused';
+      return false;
     }, null, { timeout: 40000 });
+    if ((await outcome.jsonValue()) === 'refused') {
+      const text = ((await this.page.getByTestId('canvas-publish-reviews-content').innerText()) || '').replace(/\s+/g, ' ').trim();
+      refused = text.replace(/^Unpublished changes\s*Select All\s*/i, '').replace(/\s*\d+ of \d+ changes selected.*$/i, '');
+    }
   } catch (error) {
     throw friendly({
       message: 'Could not publish the Canvas page changes through the editor.',
       cause: error,
       hint: 'Open a page in the editor and make at least one change first; the Review, Select all and Publish controls must be reachable.',
+    });
+  }
+  if (refused) {
+    throw friendly({
+      message: 'Canvas refused to publish the changes.',
+      cause: `the Review widget reports: ${refused}`,
+      hint: 'A URL alias "already in use" is often held by a page in the trash: purge that page, then enter the alias again.',
     });
   }
   await smartSettle(this.page, budget(this));
@@ -978,3 +1010,14 @@ Then(/^the "([^"]*)" Canvas page should have (at least )?(\d+) components?$/, as
     }).message
   );
 });
+
+// The helpers the other Canvas step files of this pack share.
+module.exports = {
+  canvasRequest,
+  listCanvasPages,
+  findCanvasPage,
+  requireCanvasPage,
+  findComponent,
+  publishPending,
+  openLibrary,
+};
