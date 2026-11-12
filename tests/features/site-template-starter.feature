@@ -11,6 +11,7 @@ Feature: The Starter site template
     Then the site template should be "drupal_cms_starter"
     And the site template should not be "drupal_cms_blank"
     And the site should have at least 1 Canvas page
+    And the Canvas pattern library should not list the "Hero slider" pattern
     And the "Home" Canvas page should exist
 
   Scenario: The template installs its modules, theme, roles and content type
