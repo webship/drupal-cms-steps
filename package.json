@@ -14,6 +14,7 @@
     "tests/step-definitions/drupal-canvas-library.steps.js",
     "tests/step-definitions/drupal-cms-addons.steps.js",
     "tests/step-definitions/drupal-cms-forms.steps.js",
+    "tests/step-definitions/drupal-cms-editorial.steps.js",
     "tests/selectors/drupal-cms.json",
     "README.md",
     "LICENSE"
