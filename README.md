@@ -67,8 +67,8 @@ worldParameters: {
   blockThirdPartyRequests: process.env.ALLOW_THIRD_PARTY_REQUESTS !== '1', // keep runs hermetic (tagify loads from a CDN)
   acceptCookieConsent: process.env.KEEP_COOKIE_CONSENT !== '1',           // pre-accept the Klaro consent dialog
 
-  // The accounts `Given I am a logged in user with the "<handle>" user` logs in as, with the
-  // roles `Given I add the testing users` grants when it creates them.
+  // The accounts `Given I am a logged in user with the "<handle>" user` logs in as. The script
+  // that builds the site creates them; no feature creates or deletes a user.
   users: {
     admin:            { username: process.env.DRUPAL_ADMIN_USER || 'admin', password: process.env.DRUPAL_ADMIN_PASS || 'admin', email: process.env.DRUPAL_ADMIN_MAIL || 'admin@example.com', isAdmin: true },
     'content editor': { username: process.env.DRUPAL_EDITOR_USER || 'content_editor', password: process.env.DRUPAL_EDITOR_PASS || 'content_editor', email: process.env.DRUPAL_EDITOR_MAIL || 'content_editor@example.com', roles: ['content_editor'] },
@@ -101,7 +101,7 @@ worldParameters: {
 | `LAUNCH_URL` | `DDEV_PRIMARY_URL`, then `http://localhost:8080` | the site under test |
 | `DRUPAL_SITE_TEMPLATE` / `DRUPAL_CMS_RECIPES` | `drupal_cms_starter` / none | what the site was installed with (see "Site templates") |
 | `DRUPAL_ADMIN_USER` / `DRUPAL_ADMIN_PASS` / `DRUPAL_ADMIN_MAIL` | `admin` / `admin` / `admin@example.com` | the `admin` handle (the installer's account) |
-| `DRUPAL_EDITOR_USER` / `DRUPAL_EDITOR_PASS` / `DRUPAL_EDITOR_MAIL` | `content_editor` / `content_editor` / `content_editor@example.com` | the `content editor` handle (Drupal CMS creates the role but no user; the pack creates it) |
+| `DRUPAL_EDITOR_USER` / `DRUPAL_EDITOR_PASS` / `DRUPAL_EDITOR_MAIL` | `content_editor` / `content_editor` / `content_editor@example.com` | the `content editor` handle (Drupal CMS creates the role but no user; the install script creates one) |
 | `DRUPAL_AUTHENTICATED_USER` / `DRUPAL_AUTHENTICATED_PASS` / `DRUPAL_AUTHENTICATED_MAIL` | `authenticated` / `authenticated` / `authenticated@example.com` | the `authenticated` handle, an account with no role |
 | `DRUPAL_ANONYMOUS_NAME` / `DRUPAL_ANONYMOUS_EMAIL` | `Webship QA` / `qa@example.com` | what an anonymous visitor types into a contact form |
 | `ALLOW_THIRD_PARTY_REQUESTS=1` | off | let cross-origin requests through |
@@ -114,7 +114,16 @@ worldParameters: {
 
 ### Users registry
 
-The `users` registry is what the core pack's `Given I am a logged in user with the "admin" user` step reads (the login is verified: a refused login fails with the site's message), and what `Given I add the testing users` creates on the site when the accounts are missing, through `/admin/people/create`, with the `roles` each entry lists; `isAdmin: true` marks the installer's account, which is never created or removed. The `email` key is what this pack's email login step reads (`When I log in with the email address of "content editor"`, through the Login Email or Username module Drupal CMS ships).
+Accounts are configuration, not test data. The script that builds the site creates them, the `users` registry names them, and no feature creates or deletes a user. A suite that makes its own accounts cannot run against a site where it may not, and leaves accounts behind when it fails.
+
+| Handle | Account | Created by |
+| --- | --- | --- |
+| `admin` | the administrator (`isAdmin: true`) | the Drupal CMS installer |
+| `content editor` | a user with the Content editor role | `scripts/install-site-template.sh` (Drupal CMS creates the role, but no user for it) |
+| `authenticated` | a user with no role | `scripts/install-site-template.sh` |
+| `anonymous` | not an account: the name and email a visitor types into a form | |
+
+`Given I am a logged in user with the "content editor" user` (a core pack step) reads the registry and logs in; the login is verified, so a refused login fails with the message of the site. `When I log in with the email address of "content editor"` reads the `email` key. For a site of your own, create the accounts once (`drush user:create`, then `drush user:role:add`), or point the handles at accounts that exist, through the environment variables above.
 
 ### Named selectors
 

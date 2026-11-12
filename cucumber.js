@@ -69,11 +69,12 @@ module.exports = {
 
       // ---------------------------------------------------------------------
       // Users registry: the accounts "I am a logged in user with the "<handle>"
-      // user" logs in as, with the roles "I add the testing users" grants when
-      // it creates them. Drupal CMS creates the Content editor role but no
-      // user for it; "authenticated" is an account with no role at all. Every
-      // value comes from the environment so no credential lives in a feature
-      // file or in version control.
+      // user" logs in as. Accounts are configuration: the script that builds
+      // the site creates them (scripts/install-site-template.sh here) and this
+      // block names them; no feature creates or deletes a user. Drupal CMS
+      // creates the Content editor role but no user for it; "authenticated" is
+      // an account with no role at all. Every value comes from the environment,
+      // so no credential lives in a feature file or in version control.
       // ---------------------------------------------------------------------
       users: {
         admin: {

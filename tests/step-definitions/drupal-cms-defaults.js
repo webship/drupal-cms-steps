@@ -3,7 +3,7 @@
 // What this pack brings along for every scenario. Not a step file.
 //
 //   1. The core pack's steps. A Drupal CMS project installs this pack alone;
-//      everything a plain Drupal site has (login by handle, the testing users,
+//      everything a plain Drupal site has (login by handle, the users registry,
 //      named pages, messages, listings, the editor, the media library, access
 //      control, the Navigation sidebar and top bar, content moderation, site
 //      structure, Layout Builder) comes from @webship-js/drupal-core-steps,
