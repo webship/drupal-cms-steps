@@ -9,6 +9,8 @@
     "tests/step-definitions/drupal-cms-consent.steps.js",
     "tests/step-definitions/drupal-canvas.steps.js",
     "tests/step-definitions/drupal-site-templates.steps.js",
+    "tests/step-definitions/drupal-cms-trash.steps.js",
+    "tests/step-definitions/drupal-canvas-pages.steps.js",
     "tests/selectors/drupal-cms.json",
     "README.md",
     "LICENSE"
