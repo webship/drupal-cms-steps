@@ -8,9 +8,16 @@
 // the login with an email address (the Login Email or Username module), and
 // the hook that keeps a run free of third-party requests.
 //
-// Drupal Canvas steps live in ./drupal-canvas.steps.js, the cookie consent in
-// ./drupal-cms-consent.steps.js and the site template steps in
-// ./drupal-site-templates.steps.js.
+// The other step files of this pack:
+//   ./drupal-canvas.steps.js          Canvas through its authoring API and its Library
+//   ./drupal-canvas-pages.steps.js    the life of a page in the Canvas editor
+//   ./drupal-canvas-library.steps.js  patterns and media in Canvas
+//   ./drupal-cms-trash.steps.js       the trash
+//   ./drupal-cms-consent.steps.js     the cookie consent and the privacy settings
+//   ./drupal-cms-addons.steps.js      the recommended add-ons of Project Browser
+//   ./drupal-cms-forms.steps.js       the forms of the Forms recipe
+//   ./drupal-cms-editorial.steps.js   scheduling, the workflow, redirects
+//   ./drupal-site-templates.steps.js  site templates and recipes
 //
 // Login by handle, named pages, status messages, page titles, breadcrumbs,
 // listings and their operations, the rich text editor, the media library,

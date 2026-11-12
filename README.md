@@ -2,20 +2,31 @@
 
 [![Test](https://github.com/webship/drupal-cms-steps/actions/workflows/test.yml/badge.svg)](https://github.com/webship/drupal-cms-steps/actions/workflows/test.yml)
 
-Drupal CMS specific Cucumber step definitions for [webship-js](https://www.npmjs.com/package/webship-js), a Playwright + Cucumber BDD testing framework. `@webship-js/drupal-cms-steps` covers what [Drupal CMS](https://www.drupal.org/about/drupal-cms) adds on top of a plain Drupal core site: the Navigation sidebar and top bar as Drupal CMS ships them, the dashboard and its sections, the content types a site template installs, the Gin node form, the editorial workflow, email login, and **Drupal Canvas**, both through its editor and through its authoring API.
+Cucumber step definitions for [Drupal CMS](https://www.drupal.org/about/drupal-cms), a plugin for [webship-js](https://www.npmjs.com/package/webship-js) (Playwright and Cucumber). `@webship-js/drupal-cms-steps` covers what Drupal CMS adds to a Drupal core site: the dashboard, the Gin administration theme, **Drupal Canvas** (the editor and its authoring API), the trash, the consent manager (Klaro), the recommended add-ons of Project Browser, the Forms and Search recipes, scheduling, the editorial workflow and redirects, and the site template a site was installed from.
 
-It is a **plugin for webship-js** and builds on [`@webship-js/drupal-core-steps`](https://www.npmjs.com/package/@webship-js/drupal-core-steps): everything a Drupal core site has (login by user handle, named admin pages, status messages, page titles, breadcrumbs, listings and their operations, the rich text editor, the media library, session-aware HTTP status, cache flushing) comes from the core pack, and element, text, table row, URL and response assertions come from webship-js itself. This pack never duplicates a step either of them already provides.
+It builds on [`@webship-js/drupal-core-steps`](https://www.npmjs.com/package/@webship-js/drupal-core-steps) and loads it: login by user handle, named administration pages, status messages, page titles, listings and their operations, the rich text editor, the media library, access control, the Navigation sidebar and the top bar, content moderation, meta tags and the accessibility audit come from the core pack and from webship-js. This pack never repeats a step either of them provides.
 
-## What's covered
+Every step in this pack was written against a real Drupal CMS 2.x site and runs against one in CI (see "Running this repository's own suite"); no step is proven on a mock page.
 
-- **Dashboard**: `Given I am on the dashboard`, `I should see the dashboard`, `I should see the "Recent content" dashboard section`, `I should not see the "Announcements" dashboard section`
-- **Site templates and add-on recipes**: `Given the site template is "drupal_cms_starter"` and `Given the "drupal_cms_forms" recipe is applied` run a scenario only where that template or recipe is installed (skipped elsewhere), `the site template should be "..."`, `the site should have at least 1 Canvas page`; `scripts/install-site-template.sh` installs the fixture with any template and recipes (see "Site templates")
-- **Cookie consent** (Klaro, which Drupal CMS ships): the suite pre-accepts it before every scenario (`acceptCookieConsent`, `KEEP_COOKIE_CONSENT=1` to keep the dialog), `I should (not) see the cookie consent dialog`, `I accept|decline the cookie consent`, `the cookie consent is not given yet`; the Autosave Form "resume your draft?" dialog is discarded after a step on a node form
-- **Email login**: `When I log in with the email address of "content editor"` (the Login Email or Username module Drupal CMS ships)
-- **Drupal Canvas, API**: `Given there is a new Canvas page "Landing" at "/landing"`, `When I add the "Heading" component to the bottom of the "Landing" Canvas page and publish it:` with a `| prop | value |` table, `When I create a Canvas page "…" at "/…" with the "…" component:`, `When I publish the pending Canvas changes`, `When I delete the "Landing" Canvas page`, `When I visit the "Landing" Canvas page`, `the "Landing" Canvas page should exist`, `the Canvas component library should list the "Heading" component`
-- **Drupal Canvas, editor**: `When I open the "Landing" Canvas page in the editor`, `I should see the Canvas editor`, `When I open the "Components" tab in the Canvas Library`, `When I filter the Canvas Library by "Heading"`, `the Canvas Library "Components" tab should list "Heading"`, `When I insert the "Heading" component from the Canvas Library`, `When I set the Canvas component option "Heading" to "Welcome"`, `When I publish the Canvas page changes through the editor`, `the "Landing" Canvas page should have 2 components`
+## What is covered
 
-Every step accepts the `I` and `we` pronoun forms, and every assertion reads both polarities from one definition. Each step is documented inline in `tests/step-definitions/drupal-cms.steps.js` and `tests/step-definitions/drupal-canvas.steps.js` with its own Gherkin examples.
+- **Dashboard**: `Given I am on the dashboard`, `I should see the dashboard`, `I should see the "Recent content" dashboard section`.
+- **Drupal Canvas, the life of a page in the editor**: `When I add a Canvas page from the Pages listing`, `When I set the Canvas page "Title" to "Landing"`, `When I set the Canvas page "URL alias" to "/landing"`, `the Canvas editor should show the page as "Draft"`, `the Canvas editor should have 1 pending change`, `the Canvas preview should show "Welcome"`, `When I publish the Canvas page changes through the editor`, `publishing the Canvas page changes through the editor should fail with "is already in use"`, `When I discard the pending Canvas changes`, `When I delete the "Landing" page from the Canvas page list`.
+- **Drupal Canvas, panels, components and patterns**: `When I open the "Layers" panel in the Canvas editor`, `the Canvas "Templates" panel should list "Full content template"`, `When I open the "Components" tab in the Canvas Library`, `When I filter the Canvas Library by "Heading"`, `When I insert the "Heading" component from the Canvas Library`, `When I set the Canvas component option "Heading" to "Welcome"`, `When I select the "Heading" component in the Canvas Layers`, `When I duplicate the "Heading" component in the Canvas Layers`, `When I save the "Heading" component as the Canvas pattern "Page heading"`, `When I delete the "Page heading" Canvas pattern`, `When I open the "Full content template" template in the Canvas editor`, `the Canvas editor should be editing "Utility page - Full content template"`.
+- **Drupal Canvas, media**: `When I open the media library of the Canvas component option "Image"`, `When I upload "tests/fixtures/sample.png" to the media library with the alternative text "A blue sample image"`, `the Canvas component option "Image" should hold the media "sample.png"`.
+- **Drupal Canvas, authoring API** (fast setup and checks, no editor): `Given there is a new Canvas page "Landing" at "/landing"`, `When I add the "Heading" component to the bottom of the "Landing" Canvas page and publish it:` with a `| prop | value |` table, `When I create a Canvas page "..." at "/..." with the "..." component:`, `When I publish the pending Canvas changes`, `When I delete the "Landing" Canvas page`, `When I visit the "Landing" Canvas page`, `the "Landing" Canvas page should exist`, `the "Landing" Canvas page should have 2 components`, `the Canvas component library should list the "Heading" component`, `the Canvas pattern library should list the "Page heading" pattern`.
+- **Trash**: `Given I am on the Canvas pages trash`, `the content trash should hold "Old page"`, `When I restore "Old page" from the content trash`, `When I purge "Landing" from the Canvas pages trash`.
+- **Cookie consent** (Klaro): the suite accepts the consent before every scenario (`acceptCookieConsent`); `the cookie consent is not given yet`, `I should see the cookie consent dialog`, `When I accept the cookie consent`, `When I decline the cookie consent`, `When I open the consent settings`, `When I allow the "Matomo" service in the consent settings`, `When I save the consent settings`, `the consent for the "matomo" service should be given`, `the cookie consent should be stored`.
+- **Privacy settings of the site**: `the consent dialog mode should be "notice"`, `When I set the consent dialog mode to "silent"`, `the "Matomo" consent service should be enabled`.
+- **Add-ons and recipes**: `Given the "drupal_cms_forms" recipe is applied` (runs a scenario only where the recipe is applied), `Given I am on the recommended add-ons page`, `the "Forms" add-on should be installed`, `the recommended add-ons should list "AI Assistant"`, `the installed add-ons should match the recipes of the suite`.
+- **Forms** (the Forms recipe): `When I pass the spam protection of the form`, `I should see the form confirmation "Thanks for contacting us!"`, `the "Contact" form should have 1 submission`, `When I clear the submissions of the "Contact" form`.
+- **Editorial tools**: `When I schedule the content to be published on "2031-01-15" at "09:30"`, `the scheduled content should list "Spring campaign"`, `the "Basic" workflow should have the "Draft" state`, `When I add a redirect from "old-address" to "/home"`, `the path "/old-address" should redirect to "/home"`, `When I delete the redirect from "old-address"`.
+- **Site templates**: `Given the site template is "drupal_cms_starter"` (runs a scenario only on a site installed from that template), `the site template should be "..."`, `the site should have at least 1 Canvas page`; `scripts/install-site-template.sh` installs the fixture with any template and recipes.
+- **Email login**: `When I log in with the email address of "content editor"`.
+
+Every step accepts the `I` and `we` forms, and an assertion reads both polarities ("should" and "should not") from one definition. Each step is documented above its definition in `tests/step-definitions/` with five Gherkin examples; `npm run test:examples` checks them.
+
+A scenario that creates content removes it again: a deleted page stays in the trash with its URL alias, so the features of this repository purge what they delete, and a suite that follows them leaves the site as it found it.
 
 ## Requirements
 
@@ -29,7 +40,7 @@ Every step accepts the `I` and `we` pronoun forms, and every assertion reads bot
 npm install --save-dev webship-js @webship-js/drupal-cms-steps
 ```
 
-That is the whole install: this pack depends on [`@webship-js/drupal-core-steps`](https://www.npmjs.com/package/@webship-js/drupal-core-steps) and loads its steps itself, so a Drupal CMS project installs **one** Drupal step pack and lists **two** step sources in `cucumber.js`, in this order:
+That is the whole installation: this pack depends on [`@webship-js/drupal-core-steps`](https://www.npmjs.com/package/@webship-js/drupal-core-steps) and loads its steps itself, so a Drupal CMS project installs **one** Drupal step pack and lists **two** step sources in `cucumber.js`, in this order:
 
 ```javascript
 module.exports = {
@@ -48,7 +59,7 @@ module.exports = {
 };
 ```
 
-A project that also lists the core pack's own glob keeps working (Node loads a file once). Run `npx cucumber-js --dry-run` once after wiring the sources: it reports any undefined or ambiguous step before a browser is opened.
+A project that also lists the glob of the core pack keeps working (Node.js loads a file once). Run `npx cucumber-js --dry-run` once after the sources are in place: it reports every undefined or ambiguous step before a browser opens.
 
 ## Settings
 
@@ -64,7 +75,8 @@ worldParameters: {
   recipes: (process.env.DRUPAL_CMS_RECIPES || '').split(',').map((r) => r.trim()).filter(Boolean),
 
   blockThirdPartyRequests: process.env.ALLOW_THIRD_PARTY_REQUESTS !== '1', // keep runs hermetic (tagify loads from a CDN)
-  acceptCookieConsent: process.env.KEEP_COOKIE_CONSENT !== '1',           // pre-accept the Klaro consent dialog
+  acceptCookieConsent: process.env.KEEP_COOKIE_CONSENT !== '1',           // accept the Klaro consent dialog up front
+  formTimeLimit: parseInt(process.env.DRUPAL_FORM_TIME_LIMIT || '5', 10), // seconds Honeypot wants before a form is submitted
 
   // The accounts `Given I am a logged in user with the "<handle>" user` logs in as. The script
   // that builds the site creates them; no feature creates or deletes a user.
@@ -104,7 +116,8 @@ worldParameters: {
 | `DRUPAL_AUTHENTICATED_USER` / `DRUPAL_AUTHENTICATED_PASS` / `DRUPAL_AUTHENTICATED_MAIL` | `authenticated` / `authenticated` / `authenticated@example.com` | the `authenticated` handle, an account with no role |
 | `DRUPAL_ANONYMOUS_NAME` / `DRUPAL_ANONYMOUS_EMAIL` | `Webship QA` / `qa@example.com` | what an anonymous visitor types into a contact form |
 | `ALLOW_THIRD_PARTY_REQUESTS=1` | off | let cross-origin requests through |
-| `KEEP_COOKIE_CONSENT=1` | off | show the cookie consent dialog instead of pre-accepting it |
+| `KEEP_COOKIE_CONSENT=1` | off | show the cookie consent dialog instead of accepting it up front |
+| `DRUPAL_FORM_TIME_LIMIT` | `5` | the seconds Honeypot wants before a form is submitted (`0` for none) |
 | `WEBSHIP_PAGE_WAIT` | `3000` | the settle budget per page; `8000` is the safer value for the Gin admin and the Canvas editor on a slow runner |
 | `WEBSHIP_STEP_TIMEOUT` | `45000` | the step timeout (a `timeout` key in cucumber.js is ignored: webship-js sets it when it loads) |
 | `HEADLESS` / `SLOW_MO` | `true` / `300` (`800` when headed) | `playwright.config.ts`; `npm run test:headed` sets `HEADLESS=false` |
@@ -180,82 +193,96 @@ Feature: The Starter site template
 
   Scenario: The Forms recipe adds the contact form
     Given the "drupal_cms_forms" recipe is applied
-    And I am on "/contact"
+    And I am on "/form/contact-form"
     Then I should see the page title "Contact"
 ```
 
 What a template promises is asserted with the core pack's site structure steps (modules, default theme, roles, menus, front page, content types, canonical URLs) and this pack's Canvas steps; `tests/features/site-template-starter.feature`, `site-template-blank.feature` and `recipes.feature` are the models to copy for a template of your own. `Then the site template should be "..."` restates what the suite was told, for the report.
 
+The recipes are the one part the site can confirm: Project Browser lists the add-on recipes of Drupal CMS with their state under "Extend, Recommended add-ons". `Then the "Forms" add-on should be installed` reads that screen, and `Then the installed add-ons should match the recipes of the suite` fails when `DRUPAL_CMS_RECIPES` names a recipe the site does not have, or leaves out one it has.
+
 ## Quick example
 
 ```gherkin
-Feature: Canvas landing page
+Feature: A landing page
 
-  Scenario: A heading is published through the Canvas API
+  Scenario: An editor builds and publishes a page in Canvas
     Given I am a logged in user with the "admin" user
-    And there is a new Canvas page "Landing" at "/landing"
-    When I add the "Heading" component to the bottom of the "Landing" Canvas page and publish it:
-      | heading_text | Welcome |
-    And I visit the "Landing" Canvas page
+    When I add a Canvas page from the Pages listing
+    And I set the Canvas page "Title" to "Landing"
+    And I set the Canvas page "URL alias" to "/landing"
+    And I open the "Components" tab in the Canvas Library
+    And I insert the "Heading" component from the Canvas Library
+    And I set the Canvas component option "Heading" to "Welcome"
+    Then the Canvas preview should show "Welcome"
+    When I publish the Canvas page changes through the editor
+    Then the Canvas editor should show the page as "Published"
+    When I visit the "Landing" Canvas page
     Then I should see "Welcome"
+    # Leave the site as it was: a deleted page keeps its URL alias in the trash.
+    When I delete the "Landing" Canvas page
+    And I purge "Landing" from the Canvas pages trash
+    Then the Canvas pages trash should not hold "Landing"
 ```
 
-More runnable examples: `tests/features/*.feature` in this repo.
+More examples that run: `tests/features/*.feature` in this repository.
 
-## Running this repo's own test suite
+## Running this repository's own suite
 
-This repository is itself a working webship-js project. Its `tests/features/*.feature` files run against a **self-hosted default Drupal CMS 2.x site managed by [DDEV](https://ddev.com/)**, installed non-interactively with `drush site:install drupal_cms_installer`, which applies the "Starter" site template. That template installs Drupal Canvas (the `canvas` module), the Utility page content type with the basic editorial workflow, the dashboard, the Navigation sidebar and top bar, and the starter content (a published Canvas "Home" page and an unpublished "Privacy policy" draft). The only addition is a `content_editor` account, because Drupal CMS creates the Content editor role but no user for it.
+This repository is a working webship-js project. Its features run against a **real Drupal CMS 2.x site managed by [DDEV](https://ddev.com/)**, installed without the browser by `drush site:install drupal_cms_installer` with the Starter site template. The template installs Drupal Canvas, the Utility page content type with the Basic editorial workflow, the dashboard, the Navigation sidebar and the top bar, and the starter content (a published Canvas page, "Home", and an unpublished draft, "Privacy policy"). The install script adds the two accounts of the users registry, switches the consent manager to its notice with one optional service, and turns the telemetry prompt off.
 
 | Area | Feature files |
 | --- | --- |
-| Site templates | `site-template-starter`, `site-template-blank`, `recipes` (each scenario states the template or recipe it needs and is skipped elsewhere; CI runs the Starter template, the Starter with the Forms and Search recipes, and the Blank template) |
-| Public pages and login | `home-page`, `login-logout`, `cookie-consent` |
-| Administration | `admin-dashboard`, `navigation-toolbar`, `top-bar`, `user-management` |
-| Content | `content-management` |
-| Drupal Canvas | `canvas` |
+| Site templates, add-ons and recipes | `site-template-starter`, `site-template-blank`, `add-ons`, `recipes` (each scenario states the template or recipe it needs and is skipped elsewhere) |
+| Public pages and login | `home-page`, `login-logout`, `cookie-consent`, `error-pages`, `seo`, `accessibility` |
+| Administration | `admin-dashboard`, `navigation-toolbar`, `top-bar`, `gin`, `user-management` |
+| Content | `content-management`, `editorial`, `trash` |
+| Drupal Canvas | `canvas`, `canvas-page-lifecycle`, `canvas-library` |
 
-The `drupal/` directory holds a committed `.ddev/config.yaml` for this fixture site; the Drupal CMS codebase itself (`web/`, `vendor/`, `composer.json`) is generated fresh by `ddev composer create-project` and gitignored, so every run starts from a clean install.
+The `drupal/` directory holds a committed `.ddev/config.yaml` for the fixture site. The Drupal CMS codebase (`web/`, `vendor/`, `composer.json`) is created by `ddev composer create-project` and ignored by Git, so every build starts from a clean install.
 
 ```bash
 cd drupal
 ddev start
 ddev composer create-project drupal/cms --no-interaction
-# drupal/cms scaffolds its own .ddev/config.yaml (no project name, a DDEV
-# version constraint): put this project's name back and drop the constraint.
+# drupal/cms writes its own .ddev/config.yaml (no project name, a DDEV version
+# constraint): put the name of this project back and drop the constraint.
 sed -i '/ddev_version_constraint/d' .ddev/config.yaml
 ddev config --project-name=drupal-cms-steps-site --project-type=drupal --docroot=web
-ddev start -y --reset-database --omit-snapshot   # the scaffold pins a database version; nothing is installed yet
+ddev start -y --reset-database --omit-snapshot   # the scaffold may configure another database version; nothing is installed yet
 cd ..
-# The site template (Starter by default) and any add-on recipes, the accounts of the users
-# registry, and the consent manager's notice: see "Site templates".
+# The site template (Starter by default), any add-on recipes, the accounts of the
+# users registry and the notice of the consent manager: see "Site templates".
 bash scripts/install-site-template.sh
 
 npm install
 npx playwright install --with-deps chromium
 LAUNCH_URL=https://drupal-cms-steps-site.ddev.site npm test
+# With the Forms and Search recipes applied to the site:
+LAUNCH_URL=https://drupal-cms-steps-site.ddev.site DRUPAL_CMS_RECIPES=drupal_cms_forms,drupal_cms_search npm test
 ```
 
-Against DDEV's HTTPS URL, `cucumber.js` relaxes Node's TLS verification for `*.ddev.site` hosts only, because one webship-js step re-requests the page outside the browser and does not trust the mkcert certificate. The account names and passwords are read from `DRUPAL_ADMIN_USER`, `DRUPAL_ADMIN_PASS`, `DRUPAL_EDITOR_USER`, `DRUPAL_EDITOR_PASS` and `DRUPAL_EDITOR_MAIL` (defaults `admin`/`admin`, `content_editor`/`content_editor`, `content_editor@example.com`).
+A DDEV release older than 1.25 has no `--reset-database` and refuses that `ddev config`: there, add `name: drupal-cms-steps-site` as the first line of `.ddev/config.yaml` instead and run `ddev restart`.
 
-Drupal CMS ships contrib modules (`tagify`) that load front-end libraries from public CDNs with render-blocking script tags, which makes `/node/add/*` hang on runners without outbound internet access. The suite therefore aborts all cross-origin requests by default; set `ALLOW_THIRD_PARTY_REQUESTS=1` to let them through.
+For the DDEV address with HTTPS, `cucumber.js` relaxes the TLS verification of Node.js for `*.ddev.site` hosts only, because one webship-js step requests the page outside the browser and does not trust the local certificate.
 
-Other scripts:
+Drupal CMS ships modules (Tagify, for one) that load front-end libraries from public CDNs with render-blocking script tags, which makes `/node/add/*` hang where the internet cannot be reached. The suite therefore aborts every cross-origin request; `ALLOW_THIRD_PARTY_REQUESTS=1` lets them through.
 
 | Script | Effect |
 | --- | --- |
-| `npm test` | Full suite, pretty output |
-| `npm run test:dry` | `--dry-run`: checks for undefined and ambiguous steps across the three step sources, no browser |
-| `npm run test:examples` | No browser: every step's JSDoc carries five `Example #n:` lines that match its own definition and no other (webship-js and the core pack included), and every feature step resolves to exactly one definition (also runs in CI) |
-| `npm run test:headed` | Headed browser |
-| `npm run test:chromium` / `test:firefox` / `test:webkit` | Pick a browser |
+| `npm test` | The full suite |
+| `npm run test:dry` | `--dry-run`: no undefined and no ambiguous step across webship-js, the core pack and this pack; no browser |
+| `npm run test:examples` | No browser: every step carries five `Example #n:` lines that match its own definition and no other, and every feature step resolves to exactly one definition |
+| `npm run test:headed` | The suite in a visible browser |
+| `npm run test:chromium` / `test:firefox` / `test:webkit` | The suite in one browser |
 
 ## Continuous integration
 
-[.github/workflows/test.yml](.github/workflows/test.yml) provisions the same default Drupal CMS site with DDEV on the GitHub Actions runner (Starter site template, Canvas included), creates the content editor account, runs the dry run and then the `tests/features/**` suite against it. Cucumber's reports and any failure screenshots are uploaded as build artifacts.
+[.github/workflows/test.yml](.github/workflows/test.yml) builds the same Drupal CMS site with DDEV on the GitHub Actions runner, three times: the Starter site template, the Starter site template with the Forms and Search recipes, and the Blank site template. Each lane runs the examples check, the dry run and the suite. The Cucumber reports and the screenshots of failures are kept as build artifacts.
 
 ## Publishing
 
-The package is publish-ready: `name`, `version`, `main`, `files`, `repository`, `license` and `publishConfig.access` are set in `package.json`, and `LICENSE` ships with the tarball. It is released to npmjs.com as [`@webship-js/drupal-cms-steps`](https://www.npmjs.com/package/@webship-js/drupal-cms-steps); development happens in this GitHub repository, on the `2.0.x` branch.
+The package is released to npmjs.com as [`@webship-js/drupal-cms-steps`](https://www.npmjs.com/package/@webship-js/drupal-cms-steps). Development happens in this repository, on the `2.0.x` branch.
 
 ## License
 
