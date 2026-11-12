@@ -2,47 +2,38 @@
 
 // Drupal CMS step definitions.
 //
-// What Drupal CMS adds on top of a plain core site, and nothing that the core
-// pack (`@webship-js/drupal-core-steps`, which ./drupal-cms-defaults.js loads)
-// or webship-js already provide: the Dashboard module's dashboard and its
-// sections, email login (the Login Email or Username module), the cookie
-// consent dialog (Klaro), the site template and recipe preconditions, and the
-// contrib Moderation Sidebar when a site adds it.
+// What Drupal CMS adds to a Drupal core site, and nothing that the core pack
+// (`@webship-js/drupal-core-steps`, which ./drupal-cms-defaults.js loads) or
+// webship-js already provide. This file holds the dashboard and its sections,
+// the login with an email address (the Login Email or Username module), and
+// the hook that keeps a run free of third-party requests.
 //
-// Drupal Canvas steps live in ./drupal-canvas.steps.js; the site template
-// steps in ./drupal-site-templates.steps.js.
+// Drupal Canvas steps live in ./drupal-canvas.steps.js, the cookie consent in
+// ./drupal-cms-consent.steps.js and the site template steps in
+// ./drupal-site-templates.steps.js.
 //
-// Login by handle, named pages, status messages, page titles,
-// breadcrumbs, listings and their operations, the rich text editor, the media
-// library, access control, the Navigation sidebar and top bar, the node form's
-// Save button, content types, content moderation, site structure and Layout
-// Builder come from the core pack; element, text, table row, URL and response
+// Login by handle, named pages, status messages, page titles, breadcrumbs,
+// listings and their operations, the rich text editor, the media library,
+// access control, the Navigation sidebar and the top bar, the Save button of
+// a content form, content types, content moderation and the site structure
+// come from the core pack; element, text, table row, URL and response
 // assertions come from webship-js.
 
 const { Given, When, Then, Before } = require('@cucumber/cucumber');
-const assert = require('assert');
-const { waitForPageLoad, friendly } = require('webship-js/tests/step-definitions/webship');
+const { friendly } = require('webship-js/tests/step-definitions/webship');
 const {
   WAIT_TIMEOUT,
   supplied,
-  budget,
   navigate,
-  waitForState,
   assertPresence,
-  assertContainsText,
   resolveUser,
   loginWithForm,
-  submitInPage,
-  robustClick,
   sessionStatus,
 } = require('@webship-js/drupal-core-steps/tests/step-definitions/drupal-helpers');
 
 const SELECTORS = {
   // The Dashboard module's page.
-  dashboard: '.dashboard, [data-drupal-selector="admin-dashboard"], .layout-dashboard',
-  // The contrib Moderation Sidebar module's toolbar tab and off-canvas panel.
-  moderationSidebarTab: '#toolbar-bar .moderation-sidebar-toolbar-tab a, .moderation-sidebar-toolbar-tab a, .toolbar-button--icon--moderation-sidebar',
-  moderationSidebar: '#drupal-off-canvas',
+  dashboard: '.dashboard',
 };
 
 // ---------------------------------------------------------------------------
@@ -126,7 +117,9 @@ Given(/^(I am |we are )*on the (?:admin )?dashboard(?: page)?$/, async function 
 
 /**
  * Assert the dashboard is, or is not, on screen: the Dashboard module's
- * `.dashboard` layout, with the "Dashboard" page title as the fallback.
+ * `.dashboard` layout, which only the dashboard page renders. A page that
+ * merely carries a "Dashboard" title, or the login form a visitor gets in
+ * its place, does not count.
  *
  * Example #1: Then I should see the dashboard
  * Example #2: And I should see the admin dashboard
@@ -137,14 +130,16 @@ Given(/^(I am |we are )*on the (?:admin )?dashboard(?: page)?$/, async function 
  */
 Then(/^(I |we )*should( not)* see the (?:admin )?dashboard$/, async function (pronounCase, notCase) {
   const dashboard = this.page.locator(SELECTORS.dashboard).first();
-  if (notCase) {
-    await assertPresence(dashboard, notCase, 'the dashboard (".dashboard")');
-    return;
+  try {
+    await dashboard.waitFor({ state: notCase ? 'hidden' : 'visible', timeout: WAIT_TIMEOUT });
+  } catch (error) {
+    const title = ((await this.page.locator('h1').first().innerText({ timeout: 1000 }).catch(() => '')) || '').trim();
+    throw friendly({
+      message: notCase ? 'The dashboard is on screen, which was not expected.' : 'The dashboard is not on screen.',
+      cause: `${this.page.url()} shows "${title}"`,
+      hint: notCase ? undefined : 'Open it with "I am on the dashboard" as a user who may view it; a refused visitor gets the login form.',
+    });
   }
-  // Either marker satisfies the positive case; Playwright waits for the
-  // first of the two to render.
-  const heading = this.page.locator('h1.page-title, h1').filter({ hasText: /Dashboard/ }).first();
-  await assertPresence(dashboard.or(heading).first(), undefined, 'the dashboard (".dashboard", or a "Dashboard" page title)');
 });
 
 /**
@@ -166,77 +161,6 @@ Then(/^(I |we )*should( not)* see the "([^"]*)" dashboard section$/, async funct
   const escaped = sectionTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const heading = dashboard.locator('h2, h3').filter({ hasText: new RegExp(`^\\s*${escaped}\\s*$`) }).first();
   await assertPresence(heading, notCase, `the "${sectionTitle}" dashboard section heading`);
-});
-
-// ---------------------------------------------------------------------------
-// Moderation Sidebar (contrib)
-// ---------------------------------------------------------------------------
-
-/**
- * Open the Moderation Sidebar (contrib module) from its toolbar tab, when a
- * site adds that module to Drupal CMS.
- *
- * Example #1: When I open the moderation sidebar
- * Example #2: And I open the moderation sidebar
- * Example #3: When we open the moderation sidebar
- * Example #4: And we open the moderation sidebar
- * Example #5: When open the moderation sidebar
- *
- */
-When(/^(I |we )*open the moderation sidebar$/, async function (pronounCase) {
-  const tab = this.page.locator(SELECTORS.moderationSidebarTab).first();
-  try {
-    await tab.waitFor({ state: 'attached', timeout: budget(this) });
-  } catch (error) {
-    throw friendly({
-      message: 'The moderation sidebar toolbar tab was not found.',
-      cause: error,
-      hint: 'This needs the Moderation Sidebar module and a moderated content item on screen.',
-    });
-  }
-  await robustClick(tab);
-  await waitForState(this.page.locator(SELECTORS.moderationSidebar).first(), 'visible', 'Expected the moderation sidebar to open');
-  await waitForPageLoad(this.page, budget(this));
-});
-
-/**
- * Assert the open Moderation Sidebar shows, or does not show, a text: the
- * current state, or an action such as "Edit content" or "Delete". Scoped to
- * the off-canvas panel and matched case-insensitively.
- *
- * Example #1: Then the moderation sidebar should show "Draft"
- * Example #2: And the moderation sidebar should show "Edit content"
- * Example #3: Then the moderation sidebar should not show "Delete"
- * Example #4: And moderation sidebar should show "Published"
- * Example #5: Then the moderation sidebar should not show "Archived"
- *
- */
-Then(/^(?:the )?moderation sidebar should( not)* show "([^"]*)"$/, async function (notCase, text) {
-  const sidebar = this.page.locator(SELECTORS.moderationSidebar).first();
-  try {
-    await sidebar.waitFor({ state: 'visible', timeout: budget(this) });
-  } catch (error) {
-    throw friendly({
-      message: 'The moderation sidebar is not open.',
-      cause: error,
-      hint: 'Open it first with "I open the moderation sidebar".',
-    });
-  }
-  // The assertion is the wait: narrow the panel to "contains the text" and
-  // let Playwright poll for that to hold (or to stop holding).
-  const pattern = new RegExp(text.trim().split(/\s+/).map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+'), 'i');
-  try {
-    await sidebar.filter({ hasText: pattern }).waitFor({ state: notCase ? 'detached' : 'attached', timeout: budget(this) });
-  } catch (error) {
-    const body = ((await sidebar.innerText({ timeout: 1000 }).catch(() => '')) || '').replace(/\s+/g, ' ').trim();
-    throw friendly({
-      message: notCase
-        ? `The moderation sidebar unexpectedly shows "${text}".`
-        : `The moderation sidebar does not show "${text}".`,
-      cause: `the panel reads "${body}"`,
-      hint: 'The text is matched case-insensitively inside the off-canvas panel; check the state name or action label the module renders.',
-    });
-  }
 });
 
 // Referenced for completeness by downstream packs; kept exported so a project
