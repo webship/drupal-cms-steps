@@ -12,6 +12,7 @@ Feature: Admin dashboard
     And I should see the "Recent content" dashboard section
     And I should see the "Top tasks" dashboard section
     And I should see the "Announcements" dashboard section
+    And I should not see the "Site status" dashboard section
 
   Scenario: The dashboard lists the starter content
     Given I am a logged in user with the "admin" user

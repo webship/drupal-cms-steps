@@ -130,8 +130,16 @@ Then(/^the site should have at least (\d+) Canvas pages?$/, async function (expe
       hint: 'Log in first as a user who may use the Canvas editor; the canvas module must be installed.',
     });
   }
-  const data = await response.json().catch(() => null);
-  const count = Array.isArray(data) ? data.length : (data && typeof data === 'object' ? Object.keys(data).length : 0);
+  // The content API answers `{ data: [...], meta: { count }, links }`.
+  const payload = await response.json().catch(() => null);
+  const list = payload && Array.isArray(payload.data) ? payload.data : (Array.isArray(payload) ? payload : null);
+  if (!list) {
+    throw friendly({
+      message: 'Could not read the list of Canvas pages.',
+      cause: `${url} answered ${response.status()} without a list of pages`,
+    });
+  }
+  const count = payload && payload.meta && Number.isFinite(payload.meta.count) ? payload.meta.count : list.length;
   const want = parseInt(expected, 10);
   assert.ok(
     count >= want,

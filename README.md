@@ -11,7 +11,6 @@ It is a **plugin for webship-js** and builds on [`@webship-js/drupal-core-steps`
 - **Dashboard**: `Given I am on the dashboard`, `I should see the dashboard`, `I should see the "Recent content" dashboard section`, `I should not see the "Announcements" dashboard section`
 - **Site templates and add-on recipes**: `Given the site template is "drupal_cms_starter"` and `Given the "drupal_cms_forms" recipe is applied` run a scenario only where that template or recipe is installed (skipped elsewhere), `the site template should be "..."`, `the site should have at least 1 Canvas page`; `scripts/install-site-template.sh` installs the fixture with any template and recipes (see "Site templates")
 - **Cookie consent** (Klaro, which Drupal CMS ships): the suite pre-accepts it before every scenario (`acceptCookieConsent`, `KEEP_COOKIE_CONSENT=1` to keep the dialog), `I should (not) see the cookie consent dialog`, `I accept|decline the cookie consent`, `the cookie consent is not given yet`; the Autosave Form "resume your draft?" dialog is discarded after a step on a node form
-- **Moderation Sidebar** (contrib): `When I open the moderation sidebar`, `the moderation sidebar should show "Draft"`, for sites that add that module (the Navigation sidebar, the top bar, the content types, the Gin-aware `save the content`, the required-field check and core's content moderation steps now live in the core pack and are available here)
 - **Email login**: `When I log in with the email address of "content editor"` (the Login Email or Username module Drupal CMS ships)
 - **Drupal Canvas, API**: `Given there is a new Canvas page "Landing" at "/landing"`, `When I add the "Heading" component to the bottom of the "Landing" Canvas page and publish it:` with a `| prop | value |` table, `When I create a Canvas page "…" at "/…" with the "…" component:`, `When I publish the pending Canvas changes`, `When I delete the "Landing" Canvas page`, `When I visit the "Landing" Canvas page`, `the "Landing" Canvas page should exist`, `the Canvas component library should list the "Heading" component`
 - **Drupal Canvas, editor**: `When I open the "Landing" Canvas page in the editor`, `I should see the Canvas editor`, `When I open the "Components" tab in the Canvas Library`, `When I filter the Canvas Library by "Heading"`, `the Canvas Library "Components" tab should list "Heading"`, `When I insert the "Heading" component from the Canvas Library`, `When I set the Canvas component option "Heading" to "Welcome"`, `When I publish the Canvas page changes through the editor`, `the "Landing" Canvas page should have 2 components`
@@ -127,12 +126,22 @@ Accounts are configuration, not test data. The script that builds the site creat
 
 ### Named selectors
 
-webship-js's named-selector steps (`Then I see visible <name>`, `Then I don't see <name>`, `When I click on <name>`) read names from a registry. Two presets are merged into every scenario, the core pack's for core's markup (`status message`, `page title`, `breadcrumb`, `navigation sidebar`, `save button`, `details`, `ajax throbber`, `media library dialog`, ...) and this pack's [`tests/selectors/drupal-cms.json`](tests/selectors/drupal-cms.json) for what Drupal CMS adds: the Gin admin theme (`header bar`, `sidebar`, `sticky form actions`, `sticky save button`, `more actions`, `dark mode toggle`, `edit form`, `confirm form`, `breadcrumb back`, `message item`), the `dashboard` and `dashboard section`, the Canvas editor (`canvas editor frame`, `canvas side menu`, `canvas topbar`, `canvas primary panel`, `canvas contextual panel`, `canvas library button`, `canvas layers button`, `canvas components library`, `canvas patterns library`, `canvas library search`, `canvas first component`, `canvas publish button`) and the consent dialog (`cookie consent dialog`, `cookie consent accept`, `cookie consent decline`). A name you define in `worldParameters.selectors` or load from `files` wins over both.
+The named selector steps of webship-js (`Then I see visible <name>`, `Then I don't see <name>`, `When I click on <name>`) read names from a registry. Two presets are merged into every scenario: the core pack's, for the markup of Drupal core, and [`tests/selectors/drupal-cms.json`](tests/selectors/drupal-cms.json) of this pack, for what Drupal CMS adds. Every name in the preset matches the markup of Drupal CMS 2.x:
+
+| Area | Names |
+| --- | --- |
+| Gin and the top bar | `header bar`, `top bar title`, `top bar status`, `more actions`, `more actions menu`, `sidebar`, `sidebar toggle`, `edit form`, `meta sidebar`, `meta sidebar toggle`, `confirm form`, `sticky form actions`, `sticky save button`, `message item` |
+| Dashboard and add-ons | `dashboard`, `dashboard section`, `add-on` |
+| Forms | `form confirmation`, `spam protection` |
+| Canvas editor | `canvas editor frame`, `canvas preview`, `canvas side menu`, `canvas topbar`, `canvas primary panel`, `canvas contextual panel`, `canvas page data panel`, `canvas page data form`, `canvas component form`, `canvas library button`, `canvas layers button`, `canvas pages button`, `canvas templates button`, `canvas components library`, `canvas patterns library`, `canvas library search`, `canvas page list`, `canvas layer`, `canvas publish button`, `canvas review list` |
+| Consent | `cookie consent dialog`, `cookie consent notice`, `cookie consent settings dialog`, `cookie consent accept`, `cookie consent decline`, `cookie consent settings`, `privacy settings link` |
+
+A name you define in `worldParameters.selectors`, or load from `files`, wins over both presets.
 
 ```gherkin
 Given I am a logged in user with the "admin" user
-And I am on the dashboard
-Then I see visible dashboard, sidebar
+And I am adding a "page"
+Then I see visible sticky form actions, sticky save button, meta sidebar
 ```
 
 ## Site templates
