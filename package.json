@@ -11,6 +11,7 @@
     "tests/step-definitions/drupal-site-templates.steps.js",
     "tests/step-definitions/drupal-cms-trash.steps.js",
     "tests/step-definitions/drupal-canvas-pages.steps.js",
+    "tests/step-definitions/drupal-canvas-library.steps.js",
     "tests/selectors/drupal-cms.json",
     "README.md",
     "LICENSE"
