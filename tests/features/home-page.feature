@@ -12,7 +12,7 @@ Feature: Home page
     Then the response status code should be 200
     And I should be on the front page
     And I should not see the navigation sidebar
-    And the site should be running Drupal 11
+    And the site generator should be "Drupal 11"
 
   Scenario: The home page is also reachable through its path alias
     Given I am on "/home"
