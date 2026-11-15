@@ -1,3 +1,5 @@
+<p align="center"><img src="https://raw.githubusercontent.com/webship/drupal-cms-steps/2.0.x/assets/logo.svg" alt="Drupal logo" width="96"></p>
+
 # drupal-cms-steps
 
 [![Test](https://github.com/webship/drupal-cms-steps/actions/workflows/test.yml/badge.svg)](https://github.com/webship/drupal-cms-steps/actions/workflows/test.yml)
@@ -287,3 +289,7 @@ The package is released to npmjs.com as [`@webship-js/drupal-cms-steps`](https:/
 ## License
 
 [MIT](LICENSE) © Webship.co
+
+## Logo
+
+The Drupal logo in this README comes from Simple Icons 16.37.0 (CC0-1.0), filled with the colour the set lists for the brand. The Drupal name and logo are trademarks of their owner; this pack is not affiliated with or endorsed by them.
