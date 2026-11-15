@@ -70,6 +70,6 @@
     "@cucumber/cucumber": "^12"
   },
   "dependencies": {
-    "@webship-js/drupal-core-steps": "^2.1.5"
+    "@webship-js/drupal-core-steps": "^2.2.1"
   }
 }
