@@ -53,7 +53,7 @@ Feature: Content management
     Given I am a logged in user with the "content editor" user
     And I am adding a "page"
     When I fill in "Title" with "Page with no description"
-    And I save the content
+    And I try to save the content
     Then the "Description" field should block submission as required
     And I should see the page title "Create Utility page"
 
