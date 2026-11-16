@@ -7,6 +7,13 @@ on:
     branches: ['2.0.x']
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   FORCE_COLOR: '1'
   # The HTTPS address: DDEV serves it with a certificate of its own authority
@@ -125,5 +132,6 @@ jobs:
           path: |
             tests/reports/
             screenshots/
+            videos/
           retention-days: 14
           if-no-files-found: ignore
