@@ -63,6 +63,21 @@ module.exports = {
 
 A project that also lists the glob of the core pack keeps working (Node.js loads a file once). Run `npx cucumber-js --dry-run` once after the sources are in place: it reports every undefined or ambiguous step before a browser opens.
 
+## Test users
+
+The accounts this repository's suite logs in as, exactly as `cucumber.js` lists them in `worldParameters.users` (the default values: each one can be replaced through its environment variable, see [Settings](#settings)). The Drupal CMS installer creates `admin`; `scripts/install-site-template.sh` creates the two others on the local test site, and CI does the same on the runner. They are placeholder credentials of that throwaway site, not of any real one.
+
+```json
+{
+  "admin": { "username": "admin", "password": "admin", "email": "admin@example.com", "isAdmin": true },
+  "content editor": { "username": "content_editor", "password": "content_editor", "email": "content_editor@example.com", "roles": ["content_editor"] },
+  "authenticated": { "username": "authenticated", "password": "authenticated", "email": "authenticated@example.com", "roles": [] },
+  "anonymous": { "name": "Webship QA", "email": "qa@example.com" }
+}
+```
+
+`Given I am a logged in user with the "content editor" user` logs in with the `content editor` entry; `When I log in with the email address of "content editor"` uses its `email`. What each account is, and who creates it, is in [Users registry](#users-registry).
+
 ## Settings
 
 Everything the pack and the core pack read lives under `worldParameters` in `cucumber.js`. The block below is what this repository runs with and what a new project copies; every value has an environment variable so nothing site-specific is committed. It is complete on its own: a Drupal CMS project installs this pack and nothing else.
