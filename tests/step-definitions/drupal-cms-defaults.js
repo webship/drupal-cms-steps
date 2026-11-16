@@ -9,7 +9,9 @@
 //      structure, Layout Builder) comes from @webship-js/drupal-core-steps,
 //      which this package depends on and loads here, so one `require` glob in
 //      cucumber.js is enough. A project that lists the core pack's glob as well
-//      is fine: Node loads a file once.
+//      is fine while npm installed one copy of it (Node loads a file once); a
+//      second, nested copy (the project pins another core version) registers
+//      every core step twice, so drop the core glob then (see README).
 //
 //   2. The named selectors Drupal CMS adds on top of core's: the Gin admin
 //      theme, the Navigation top bar as Gin styles it, the dashboard, the
