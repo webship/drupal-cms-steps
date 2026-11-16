@@ -61,7 +61,7 @@ module.exports = {
 };
 ```
 
-A project that also lists the glob of the core pack keeps working (Node.js loads a file once). Run `npx cucumber-js --dry-run` once after the sources are in place: it reports every undefined or ambiguous step before a browser opens.
+A project that also lists the glob of the core pack keeps working as long as npm installed one copy of it (Node.js loads a file once). When the project pins another version of `@webship-js/drupal-core-steps` than this pack asks for, npm puts a second copy under `node_modules/@webship-js/drupal-cms-steps/node_modules/`, both copies register their steps, and every core step becomes ambiguous. `npm ls @webship-js/drupal-core-steps` shows the copies: drop the core pack's glob from `cucumber.js` (this pack loads the copy it needs), or align the versions. Run `npx cucumber-js --dry-run` once after the sources are in place: it reports every undefined or ambiguous step before a browser opens.
 
 ## Test users
 
