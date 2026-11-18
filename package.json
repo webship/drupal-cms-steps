@@ -16,6 +16,8 @@
     "tests/step-definitions/drupal-canvas-library.steps.js",
     "tests/step-definitions/drupal-site-templates.steps.js",
     "tests/selectors/drupal-cms.json",
+    "tests/features",
+    "tests/fixtures/sample.png",
     "README.md",
     "LICENSE"
   ],
