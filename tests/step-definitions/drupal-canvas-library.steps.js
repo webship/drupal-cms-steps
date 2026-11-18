@@ -13,7 +13,6 @@
 const path = require('path');
 const fs = require('fs');
 const { When, Then } = require('@cucumber/cucumber');
-const assert = require('assert');
 const { smartSettle, friendly } = require('webship-js/tests/step-definitions/webship');
 const { budget } = require('@webship-js/drupal-core-steps/tests/step-definitions/drupal-helpers');
 const { canvasRequest, openLibrary } = require('./drupal-canvas.steps');
@@ -105,10 +104,10 @@ When(/^(I |we )*save the "([^"]*)" component as the Canvas pattern "([^"]*)"$/, 
     found = (await listPatterns(this.page)).some((p) => p.name === name);
     if (!found) await smartSettle(this.page, 500);
   }
-  assert.ok(found, friendly({
-    message: `The Canvas Library did not get the pattern "${name}".`,
-    hint: 'The dialog closed, but the pattern API does not list the pattern.',
-  }).message);
+  if (!found) throw friendly({
+message: `The Canvas Library did not get the pattern "${name}".`,
+hint: 'The dialog closed, but the pattern API does not list the pattern.',
+});
   await smartSettle(this.page, budget(this));
 });
 
@@ -127,12 +126,12 @@ When(/^(I |we )*save the "([^"]*)" component as the Canvas pattern "([^"]*)"$/, 
 Then(/^the Canvas pattern library should( not)* list the "([^"]*)" pattern$/, async function (notCase, name) {
   const patterns = await listPatterns(this.page);
   const found = patterns.some((p) => p.name === name);
-  assert.ok(notCase ? !found : found, friendly({
-    message: notCase
-      ? `The Canvas pattern library lists the "${name}" pattern, which was not expected.`
-      : `The Canvas pattern library does not list the "${name}" pattern.`,
-    cause: `patterns: ${patterns.map((p) => p.name).join(', ') || 'none'}`,
-  }).message);
+  if (!(notCase ? !found : found)) throw friendly({
+message: notCase
+? `The Canvas pattern library lists the "${name}" pattern, which was not expected.`
+: `The Canvas pattern library does not list the "${name}" pattern.`,
+cause: `patterns: ${patterns.map((p) => p.name).join(', ') || 'none'}`,
+});
 });
 
 /**
@@ -181,7 +180,7 @@ When(/^(I |we )*delete the "([^"]*)" Canvas pattern$/, { timeout: 90000 }, async
     left = (await listPatterns(this.page)).some((p) => p.name === name);
     if (left) await smartSettle(this.page, 500);
   }
-  assert.ok(!left, friendly({ message: `The "${name}" pattern is still in the Canvas Library after the delete.` }).message);
+  if (left) throw friendly({ message: `The "${name}" pattern is still in the Canvas Library after the delete.` });
   await smartSettle(this.page, budget(this));
 });
 

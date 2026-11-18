@@ -13,7 +13,6 @@
 // ./drupal-canvas.steps.js; patterns and media in ./drupal-canvas-library.steps.js.
 
 const { When, Then } = require('@cucumber/cucumber');
-const assert = require('assert');
 const { smartSettle, friendly } = require('webship-js/tests/step-definitions/webship');
 const {
   budget,
@@ -303,10 +302,10 @@ Then(/^the Canvas editor should have (no|at least \d+|\d+) pending changes?$/, {
     ok = atLeast ? count >= want : count === want;
     if (!ok) await smartSettle(this.page, 500);
   }
-  assert.ok(ok, friendly({
-    message: `Expected the Canvas editor to have ${expected} pending change(s).`,
-    cause: `the review button reads "${text}"`,
-  }).message);
+  if (!ok) throw friendly({
+message: `Expected the Canvas editor to have ${expected} pending change(s).`,
+cause: `the review button reads "${text}"`,
+});
 });
 
 /**

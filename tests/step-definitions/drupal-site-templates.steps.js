@@ -98,13 +98,10 @@ Then(/^the site template should( not)* be "([^"]*)"$/, function (notCase, name) 
   const wanted = templateMachineName(name);
   const current = templateMachineName((this.parameters && this.parameters.siteTemplate) || 'drupal_cms_starter');
   const matches = wanted === current;
-  assert.ok(
-    notCase ? !matches : matches,
-    friendly({
-      message: notCase ? `Expected the site template not to be "${wanted}".` : `Expected the site template to be "${wanted}".`,
-      cause: `the suite runs against the "${current}" site template (worldParameters.siteTemplate / DRUPAL_SITE_TEMPLATE)`,
-    }).message
-  );
+  if (!(notCase ? !matches : matches)) throw friendly({
+    message: notCase ? `Expected the site template not to be "${wanted}".` : `Expected the site template to be "${wanted}".`,
+    cause: `the suite runs against the "${current}" site template (worldParameters.siteTemplate / DRUPAL_SITE_TEMPLATE)`,
+  });
 });
 
 /**
@@ -141,13 +138,10 @@ Then(/^the site should have at least (\d+) Canvas pages?$/, async function (expe
   }
   const count = payload && payload.meta && Number.isFinite(payload.meta.count) ? payload.meta.count : list.length;
   const want = parseInt(expected, 10);
-  assert.ok(
-    count >= want,
-    friendly({
-      message: `Expected at least ${want} Canvas page(s).`,
-      cause: `the site has ${count}`,
-    }).message
-  );
+  if (count < want) throw friendly({
+    message: `Expected at least ${want} Canvas page(s).`,
+    cause: `the site has ${count}`,
+  });
 });
 
 module.exports = { templateMachineName };

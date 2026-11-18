@@ -10,7 +10,6 @@
 // brings on top.
 
 const { When, Then } = require('@cucumber/cucumber');
-const assert = require('assert');
 const { waitForPageLoad, friendly } = require('webship-js/tests/step-definitions/webship');
 const {
   WAIT_TIMEOUT,
@@ -159,12 +158,12 @@ Then(/^the "([^"]*)" workflow should( not)* have the "([^"]*)" (state|transition
   const container = this.page.locator(kind === 'state' ? '#edit-states-container' : '#edit-transitions-container').first();
   const labels = (await container.locator('table tbody tr td:first-child').allInnerTexts().catch(() => [])).map((s) => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
   const found = labels.includes(label.trim());
-  assert.ok(notCase ? !found : found, friendly({
-    message: notCase
-      ? `The "${workflow}" workflow has the "${label}" ${kind}, which was not expected.`
-      : `The "${workflow}" workflow has no "${label}" ${kind}.`,
-    cause: `${kind}s: ${labels.join(', ') || 'none'}`,
-  }).message);
+  if (!(notCase ? !found : found)) throw friendly({
+message: notCase
+? `The "${workflow}" workflow has the "${label}" ${kind}, which was not expected.`
+: `The "${workflow}" workflow has no "${label}" ${kind}.`,
+cause: `${kind}s: ${labels.join(', ') || 'none'}`,
+});
 });
 
 // ---------------------------------------------------------------------------
@@ -249,12 +248,12 @@ Then(/^the path "([^"]*)" should( not)* redirect to "([^"]*)"$/, async function 
     }
   };
   const redirects = status >= 300 && status < 400 && normalise(location) === normalise(target);
-  assert.ok(notCase ? !redirects : redirects, friendly({
-    message: notCase
-      ? `The path "${source}" redirects to "${target}", which was not expected.`
-      : `The path "${source}" does not redirect to "${target}".`,
-    cause: `${url} answered ${status}${location ? ` with Location "${location}"` : ' with no Location header'}`,
-  }).message);
+  if (!(notCase ? !redirects : redirects)) throw friendly({
+message: notCase
+? `The path "${source}" redirects to "${target}", which was not expected.`
+: `The path "${source}" does not redirect to "${target}".`,
+cause: `${url} answered ${status}${location ? ` with Location "${location}"` : ' with no Location header'}`,
+});
 });
 
 /**
