@@ -19,7 +19,6 @@ const { Given, When, Then } = require('@cucumber/cucumber');
 // Ids are made here, not in the page: the browser's crypto.randomUUID exists only in a secure context,
 // and the site under test may be served over plain http (as it is in CI).
 const { randomUUID } = require('crypto');
-const assert = require('assert');
 const { gotoUrl, smartSettle, friendly } = require('webship-js/tests/step-definitions/webship');
 const {
   supplied,
@@ -595,12 +594,9 @@ When(/^(I |we )*(?:visit|go to) the "([^"]*)" Canvas page$/, async function (pro
  */
 Then(/^the "([^"]*)" Canvas page should( not)* exist$/, async function (title, notCase) {
   const found = await findCanvasPage(this.page, title);
-  assert.ok(
-    notCase ? !found : Boolean(found),
-    friendly(notCase
-      ? `Expected no Canvas page titled "${title}", but one exists at ${found && found.path}.`
-      : `Expected a Canvas page titled "${title}", but none is listed.`).message
-  );
+  if (!(notCase ? !found : Boolean(found))) throw friendly(notCase
+    ? `Expected no Canvas page titled "${title}", but one exists at ${found && found.path}.`
+    : `Expected a Canvas page titled "${title}", but none is listed.`);
 });
 
 /**
@@ -618,15 +614,12 @@ Then(/^the "([^"]*)" Canvas page should( not)* exist$/, async function (title, n
  */
 Then(/^the Canvas component library should( not)* list the "([^"]*)" component$/, async function (notCase, component) {
   const found = await findComponent(this.page, component);
-  assert.ok(
-    notCase ? !found.id : Boolean(found.id),
-    friendly({
-      message: notCase
-        ? `The "${component}" component should not be in the Canvas component library, but it is (${found.id}).`
-        : `The "${component}" component is not in the Canvas component library.`,
-      cause: notCase ? undefined : `the library lists: ${found.available.slice(0, 40).join(', ')}`,
-    }).message
-  );
+  if (!(notCase ? !found.id : Boolean(found.id))) throw friendly({
+    message: notCase
+      ? `The "${component}" component should not be in the Canvas component library, but it is (${found.id}).`
+      : `The "${component}" component is not in the Canvas component library.`,
+    cause: notCase ? undefined : `the library lists: ${found.available.slice(0, 40).join(', ')}`,
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1002,13 +995,10 @@ Then(/^the "([^"]*)" Canvas page should have (at least )?(\d+) components?$/, as
   const count = content && Array.isArray(content.components) ? content.components.length : 0;
   const want = parseInt(expected, 10);
   const ok = atLeast ? count >= want : count === want;
-  assert.ok(
-    ok,
-    friendly({
-      message: `Expected the "${title}" Canvas page to have ${atLeast ? 'at least ' : ''}${want} component(s).`,
-      cause: `its content region holds ${count}`,
-    }).message
-  );
+  if (!ok) throw friendly({
+    message: `Expected the "${title}" Canvas page to have ${atLeast ? 'at least ' : ''}${want} component(s).`,
+    cause: `its content region holds ${count}`,
+  });
 });
 
 // The helpers the other Canvas step files of this pack share.

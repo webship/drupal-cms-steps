@@ -6,7 +6,6 @@
 // Form module on a node form that was left mid-edit.
 
 const { Given, When, Then, Before, AfterStep } = require('@cucumber/cucumber');
-const assert = require('assert');
 const { waitForPageLoad, smartSettle, friendly } = require('webship-js/tests/step-definitions/webship');
 const {
   WAIT_TIMEOUT,
@@ -259,9 +258,9 @@ When(/^(I |we )*(allow|refuse) the "([^"]*)" service in the consent settings$/, 
   }
   const want = choice === 'allow';
   if ((await input.isChecked()) !== want) await label.click();
-  assert.strictEqual(await input.isChecked(), want, friendly({
-    message: `The "${found.match.name}" service did not switch ${want ? 'on' : 'off'} in the consent settings.`,
-  }).message);
+  if ((await input.isChecked()) !== want) throw friendly({
+message: `The "${found.match.name}" service did not switch ${want ? 'on' : 'off'} in the consent settings.`,
+});
 });
 
 /**
@@ -310,13 +309,13 @@ Then(/^the consent for the "([^"]*)" service should( not)* be given$/, async fun
     consent = await storedConsent(this);
     ok = Boolean(consent && consent[key]) === want;
   }
-  assert.ok(ok, friendly({
-    message: want
-      ? `Expected the consent for the "${key}" service to be given.`
-      : `Expected the consent for the "${key}" service not to be given.`,
-    cause: describeConsent(consent),
-    hint: 'Use the machine name of the service, as the consent manager lists it (Configuration, User interface, Klaro!, Manage).',
-  }).message);
+  if (!ok) throw friendly({
+message: want
+? `Expected the consent for the "${key}" service to be given.`
+: `Expected the consent for the "${key}" service not to be given.`,
+cause: describeConsent(consent),
+hint: 'Use the machine name of the service, as the consent manager lists it (Configuration, User interface, Klaro!, Manage).',
+});
 });
 
 /**
@@ -333,10 +332,10 @@ Then(/^the consent for the "([^"]*)" service should( not)* be given$/, async fun
  */
 Then(/^the (?:visitor's )?cookie consent should( not)* be stored$/, async function (notCase) {
   const consent = await storedConsent(this);
-  assert.ok(notCase ? !consent : Boolean(consent), friendly({
-    message: notCase ? 'Expected no stored cookie consent.' : 'Expected a stored cookie consent.',
-    cause: describeConsent(consent),
-  }).message);
+  if (!(notCase ? !consent : Boolean(consent))) throw friendly({
+message: notCase ? 'Expected no stored cookie consent.' : 'Expected a stored cookie consent.',
+cause: describeConsent(consent),
+});
 });
 
 // ---------------------------------------------------------------------------
@@ -408,12 +407,12 @@ Then(/^the consent dialog mode should( not)* be "([^"]*)"$/, async function (not
     });
   }
   const current = modes.find((m) => m.checked);
-  assert.ok(notCase ? !mode.checked : mode.checked, friendly({
-    message: notCase
-      ? `The consent dialog mode is "${mode.value}", which was not expected.`
-      : `The consent dialog mode is not "${mode.value}".`,
-    cause: `the mode is ${current ? `"${current.value}" ("${current.label}")` : 'not set'}`,
-  }).message);
+  if (!(notCase ? !mode.checked : mode.checked)) throw friendly({
+message: notCase
+? `The consent dialog mode is "${mode.value}", which was not expected.`
+: `The consent dialog mode is not "${mode.value}".`,
+cause: `the mode is ${current ? `"${current.value}" ("${current.label}")` : 'not set'}`,
+});
 });
 
 /**
@@ -480,10 +479,10 @@ Then(/^the "([^"]*)" consent service should be (enabled|disabled)$/, async funct
       cause: `services: ${rows.map((r) => r.name).join(', ')}`,
     });
   }
-  assert.strictEqual(row.status.toLowerCase(), expected, friendly({
-    message: `Expected the "${service}" consent service to be ${expected}.`,
-    cause: `it is ${row.status.toLowerCase()}; enabled services: ${rows.filter((r) => /^enabled$/i.test(r.status)).map((r) => r.name).join(', ') || 'none'}`,
-  }).message);
+  if (row.status.toLowerCase() !== expected) throw friendly({
+message: `Expected the "${service}" consent service to be ${expected}.`,
+cause: `it is ${row.status.toLowerCase()}; enabled services: ${rows.filter((r) => /^enabled$/i.test(r.status)).map((r) => r.name).join(', ') || 'none'}`,
+});
 });
 
 module.exports = { CONSENT, storedConsent };

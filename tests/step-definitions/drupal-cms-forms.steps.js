@@ -10,7 +10,6 @@
 // generic step covers: the spam protection, the confirmation, the results.
 
 const { When, Then } = require('@cucumber/cucumber');
-const assert = require('assert');
 const { waitForPageLoad, smartSettle, friendly } = require('webship-js/tests/step-definitions/webship');
 const {
   WAIT_TIMEOUT,
@@ -153,10 +152,10 @@ Then(/^the "([^"]*)" form should have (at least )?(\d+) submissions?$/, async fu
   const cell = column >= 0 ? row.locator('td').nth(column) : row.locator('a[href*="/results/submissions"]').first();
   const count = parseInt((((await cell.innerText()) || '').match(/\d+/) || ['0'])[0], 10);
   const want = parseInt(expected, 10);
-  assert.ok(atLeast ? count >= want : count === want, friendly({
-    message: `Expected the "${title}" form to have ${atLeast ? 'at least ' : ''}${want} submission(s).`,
-    cause: `the Webforms overview counts ${count}`,
-  }).message);
+  if (!(atLeast ? count >= want : count === want)) throw friendly({
+message: `Expected the "${title}" form to have ${atLeast ? 'at least ' : ''}${want} submission(s).`,
+cause: `the Webforms overview counts ${count}`,
+});
 });
 
 /**

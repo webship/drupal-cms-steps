@@ -11,7 +11,6 @@
 // configuration.
 
 const { Given, Then } = require('@cucumber/cucumber');
-const assert = require('assert');
 const { friendly } = require('webship-js/tests/step-definitions/webship');
 const { navigate } = require('@webship-js/drupal-core-steps/tests/step-definitions/drupal-helpers');
 
@@ -107,12 +106,12 @@ Then(/^the recommended add-ons should( not)* list "([^"]*)"$/, async function (n
   await openAddons(this);
   const addons = await readAddons(this.page);
   const found = findAddon(addons, wanted);
-  assert.ok(notCase ? !found : Boolean(found), friendly({
-    message: notCase
-      ? `The recommended add-ons list "${wanted}", which was not expected.`
-      : `The recommended add-ons do not list "${wanted}".`,
-    cause: `add-ons listed: ${addons.map((a) => `${a.name} (${a.machineName})`).join(', ') || 'none'}`,
-  }).message);
+  if (!(notCase ? !found : Boolean(found))) throw friendly({
+message: notCase
+? `The recommended add-ons list "${wanted}", which was not expected.`
+: `The recommended add-ons do not list "${wanted}".`,
+cause: `add-ons listed: ${addons.map((a) => `${a.name} (${a.machineName})`).join(', ') || 'none'}`,
+});
 });
 
 /**
@@ -138,12 +137,12 @@ Then(/^the "([^"]*)" add-on should( not)* be installed$/, async function (wanted
       cause: `add-ons listed: ${addons.map((a) => `${a.name} (${a.machineName})`).join(', ') || 'none'}`,
     });
   }
-  assert.ok(notCase ? !found.installed : found.installed, friendly({
-    message: notCase
-      ? `The "${found.name}" add-on is installed, which was not expected.`
-      : `The "${found.name}" add-on is not installed.`,
-    cause: `installed add-ons: ${addons.filter((a) => a.installed).map((a) => a.name).join(', ') || 'none'}`,
-  }).message);
+  if (!(notCase ? !found.installed : found.installed)) throw friendly({
+message: notCase
+? `The "${found.name}" add-on is installed, which was not expected.`
+: `The "${found.name}" add-on is not installed.`,
+cause: `installed add-ons: ${addons.filter((a) => a.installed).map((a) => a.name).join(', ') || 'none'}`,
+});
 });
 
 /**
@@ -169,14 +168,14 @@ Then(/^the installed add-ons should match (?:the recipes of the suite(?: configu
   const known = addons.map((a) => a.machineName.toLowerCase());
   const missing = configured.filter((r) => known.includes(r) && !installed.includes(r));
   const untold = installed.filter((r) => !configured.includes(r));
-  assert.ok(!missing.length && !untold.length, friendly({
-    message: 'The add-ons installed on the site differ from the recipes the suite was told about.',
-    cause: [
-      missing.length ? `named in DRUPAL_CMS_RECIPES but not installed: ${missing.join(', ')}` : '',
-      untold.length ? `installed but not named in DRUPAL_CMS_RECIPES: ${untold.join(', ')}` : '',
-    ].filter(Boolean).join('; '),
-    hint: 'Set DRUPAL_CMS_RECIPES (worldParameters.recipes) to the recipes applied to the site, comma separated.',
-  }).message);
+  if (missing.length || untold.length) throw friendly({
+message: 'The add-ons installed on the site differ from the recipes the suite was told about.',
+cause: [
+missing.length ? `named in DRUPAL_CMS_RECIPES but not installed: ${missing.join(', ')}` : '',
+untold.length ? `installed but not named in DRUPAL_CMS_RECIPES: ${untold.join(', ')}` : '',
+].filter(Boolean).join('; '),
+hint: 'Set DRUPAL_CMS_RECIPES (worldParameters.recipes) to the recipes applied to the site, comma separated.',
+});
 });
 
 module.exports = { ADDONS, ADDONS_PATH };
