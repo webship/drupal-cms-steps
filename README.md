@@ -290,6 +290,7 @@ Drupal CMS ships modules (Tagify, for one) that load front-end libraries from pu
 | `npm test` | The full suite |
 | `npm run test:dry` | `--dry-run`: no undefined and no ambiguous step across webship-js, the core pack and this pack; no browser |
 | `npm run test:examples` | No browser: every step carries five `Example #n:` lines that match its own definition and no other, and every feature step resolves to exactly one definition |
+| `npm run test:paths` | No browser: a feature or a scenario named on the command line runs alone (`npx cucumber-js tests/features/home-page.feature`, or `tests/features/home-page.feature:12` for one scenario), and naming none runs the whole suite |
 | `npm run test:headed` | The suite in a visible browser |
 | `npm run test:chromium` / `test:firefox` / `test:webkit` | The suite in one browser |
 
