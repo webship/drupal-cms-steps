@@ -10,6 +10,147 @@ It builds on [`@webship-js/drupal-core-steps`](https://www.npmjs.com/package/@we
 
 Every step in this pack was written against a real Drupal CMS 2.x site and runs against one in CI (see "Running this repository's own suite"); no step is proven on a mock page.
 
+## From nothing to a green run
+
+What the machine needs: Docker, [DDEV](https://ddev.com), git, and Node.js 20
+or later with npm. PHP, Composer and the database run in DDEV's containers.
+
+**1. The Drupal CMS site.** The build this repository's CI runs: Drupal CMS 2
+with the Starter site template in a DDEV project, the accounts of
+[Test users](#test-users) and the notice of the consent manager (see
+[Site templates](#site-templates)). Composer fetches Drupal CMS first, which
+takes a few minutes the first time.
+
+```bash
+git clone https://github.com/webship/drupal-cms-steps.git
+cd drupal-cms-steps/drupal
+ddev start
+ddev composer create-project drupal/cms --no-interaction
+sed -i '/ddev_version_constraint/d' .ddev/config.yaml
+ddev config --project-name=drupal-cms-steps-site --project-type=drupal --docroot=web
+ddev start -y --reset-database --omit-snapshot
+cd ..
+bash scripts/install-site-template.sh
+cd ..
+```
+
+The site answers at `https://drupal-cms-steps-site.ddev.site`. A DDEV release
+older than 1.25 has no `--reset-database` and refuses that `ddev config`:
+there, add `name: drupal-cms-steps-site` as the first line of
+`.ddev/config.yaml` instead and run `ddev restart`.
+
+In the [Webship Workspace](https://github.com/webship/workspace), its Drupal
+CMS plugin builds the site instead, with the Starter site template, in a sites
+folder of the workspace (`test/` here; `dev/`, `sandboxes/` and `demos/` work
+the same):
+
+```bash
+bash core/scripts/plugins.sh --require drupal-cms --with-needs
+bash core/scripts/plugins.sh --activate drupal-cms --with-needs
+bash core/scripts/plugins.sh --install drupal-cms
+bash test/cmd-drupal-cms-project.sh mysite --install --add-users
+```
+
+That site answers at `https://mysite.ddev.site`. Its accounts are the plugin's
+(`administrator`, `content_editor` and `authenticated`, each with the password
+`dD.123123ddd` and the email address `<name>@example.com`; step 3 names
+them). The features of
+[`tests/features/`](tests/features/) pass there too, but for the cookie
+consent ones: Drupal CMS keeps its consent manager silent, and the script
+switches it to its notice with one optional service (the `klaro` lines at the
+end of [`scripts/install-site-template.sh`](scripts/install-site-template.sh)).
+
+**2. A test project.**
+
+```bash
+mkdir drupal-cms-tests && cd drupal-cms-tests
+npm init -y
+npm install --save-dev webship-js @webship-js/drupal-cms-steps
+npx init-webship-js
+```
+
+`npx init-webship-js` writes `cucumber.js`, `playwright.config.ts`, the
+`tests/` folders with a first feature and the `npm test` scripts, and installs
+Chromium. npm usually runs it already when it installs webship-js; a second
+run changes nothing. The pack brings the Drupal core pack with it
+(`@webship-js/drupal-core-steps`): one install, one copy.
+
+**3. `cucumber.js`.** Replace the file with the wiring of the pack: the step
+files of webship-js and of the pack (which loads the core pack's), the address
+of the site, and the accounts (the JSON of [Test users](#test-users)). The
+other settings keep their defaults (see [Settings](#settings)).
+
+```javascript
+module.exports = {
+  default: {
+    requireModule: ['tsx/cjs'],
+    require: [
+      'node_modules/webship-js/tests/step-definitions/**/*.js',
+      'node_modules/@webship-js/drupal-cms-steps/tests/step-definitions/**/*.js',
+      'tests/step-definitions/**/*.js',
+    ],
+    paths: ['tests/features/**/*.feature'],
+    format: ['@cucumber/pretty-formatter', 'json:tests/reports/cucumber_report.json'],
+    worldParameters: {
+      launchUrl: process.env.LAUNCH_URL || 'https://drupal-cms-steps-site.ddev.site',
+      // The waits webship-js adds around each page, scenario and step (milliseconds).
+      minWaitTime: { page: 3000, before_scenario: 0, after_scenario: 0, before_step: 0, after_step: 0 },
+      users: {
+        admin: { username: 'admin', password: 'admin', email: 'admin@example.com', isAdmin: true },
+        'content editor': { username: 'content_editor', password: 'content_editor', email: 'content_editor@example.com', roles: ['content_editor'] },
+        authenticated: { username: 'authenticated', password: 'authenticated', email: 'authenticated@example.com', roles: [] },
+        anonymous: { name: 'Webship QA', email: 'qa@example.com' },
+      },
+    },
+  },
+};
+```
+
+On a site from the Webship Workspace (step 1), the accounts are the plugin's:
+`admin: { username: 'administrator', password: 'dD.123123ddd', email: 'administrator@example.com', isAdmin: true }`,
+and `content_editor` and `authenticated` with the same password and
+`<name>@example.com`. Its address goes in `LAUNCH_URL` (step 5).
+
+**4. A first feature**, `tests/features/first-run.feature`:
+
+```gherkin
+Feature: First run
+  Scenario: The content editor logs in and gets the dashboard
+    Given I am a logged in user with the "content editor" user
+    And I am on the dashboard page
+    Then I should see the dashboard
+    And I should see the "Recent content" dashboard section
+
+  Scenario: The home page is a Canvas page
+    Given I am a logged in user with the "admin" user
+    Then the "Home" Canvas page should exist
+```
+
+**5. Run it.**
+
+```bash
+npm test
+```
+
+(`LAUNCH_URL=https://mysite.ddev.site npm test` for a site at another address.)
+A green first run prints every step, then the summary (the starter feature of
+`npx init-webship-js` and the two scenarios above, passed) and the HTML report
+it wrote:
+
+```
+3 scenarios (3 passed)
+8 steps (8 passed)
+0m05.446s (executing steps: 0m05.411s)
+[webship-js] HTML report → …/drupal-cms-tests/tests/reports/cucumber_report.html
+```
+
+From there, copy the features of [`tests/features/`](tests/features/) (they
+also ship in the package, under
+`node_modules/@webship-js/drupal-cms-steps/tests/features/`), with the file
+`tests/fixtures/sample.png` the media scenarios upload: together they use every
+step of the pack. Each scenario says the site template or recipe it needs and
+is skipped on a site without it.
+
 ## What is covered
 
 - **Logging in**: `Given I am a logged in user with the "content editor" user` (a step of the core pack, which this pack loads), and `When I log in with the email address of "content editor"`, for the email address in place of the username.
@@ -47,6 +188,7 @@ That is the whole installation: this pack depends on [`@webship-js/drupal-core-s
 ```javascript
 module.exports = {
   default: {
+    requireModule: ['tsx/cjs'],                                                   // the playwright.config.ts of the scaffold
     require: [
       'node_modules/webship-js/tests/step-definitions/**/*.js',                   // webship-js core steps
       'node_modules/@webship-js/drupal-cms-steps/tests/step-definitions/**/*.js', // this pack, which brings the Drupal core pack along
@@ -242,7 +384,7 @@ Feature: A landing page
     Then the Canvas pages trash should not hold "Landing"
 ```
 
-More examples that run: `tests/features/*.feature` in this repository.
+More examples that run: `tests/features/*.feature` in this repository (they ship in the package too, under `node_modules/@webship-js/drupal-cms-steps/tests/features/`).
 
 ## Running this repository's own suite
 
