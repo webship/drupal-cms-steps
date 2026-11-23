@@ -12,7 +12,7 @@ Every step in this pack was written against a real Drupal CMS 2.x site and runs 
 
 ## From nothing to a green run
 
-What the machine needs: Docker, [DDEV](https://ddev.com), git, and Node.js 20
+What the machine needs: Docker, [DDEV](https://ddev.com), git, and Node.js 24
 or later with npm. PHP, Composer and the database run in DDEV's containers.
 
 **1. The Drupal CMS site.** The build this repository's CI runs: Drupal CMS 2
@@ -173,7 +173,7 @@ A scenario that creates content removes it again: a deleted page stays in the tr
 
 ## Requirements
 
-- Node.js >= 20
+- Node.js >= 24
 - A [webship-js](https://www.npmjs.com/package/webship-js) 2.x test project
 - A Drupal CMS 2.x site to test against (any site template; the Canvas steps need the `canvas` module, which the Starter site template installs)
 

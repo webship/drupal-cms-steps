@@ -60,7 +60,7 @@
     "access": "public"
   },
   "engines": {
-    "node": ">= 20.0"
+    "node": ">= 24.0"
   },
   "devDependencies": {
     "tsx": "^4.19.2",

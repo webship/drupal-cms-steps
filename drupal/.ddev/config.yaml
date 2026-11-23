@@ -2,6 +2,7 @@ name: drupal-cms-steps-site
 type: drupal
 docroot: web
 php_version: "8.3"
+nodejs_version: "24"
 webserver_type: nginx-fpm
 xdebug_enabled: false
 additional_hostnames: []
